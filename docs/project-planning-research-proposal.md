@@ -1,21 +1,44 @@
 # OpenSpec Project Planning & Research Extension
 
-> Synthesized from analysis of GSD (Get Shit Done) and OpenSpec capabilities
+> Tool-agnostic workflow for OpenCode, Codex CLI, Claude Code, and other AI coding assistants
 
 ## Executive Summary
 
-This proposal extends OpenSpec with structured project planning, research capabilities, and parallel execution patterns to address context degradation, improve planning quality, and enable more sophisticated AI-assisted development workflows.
+This proposal extends OpenSpec with structured project planning, research capabilities, and execution patterns that work across AI coding tools. The design prioritizes **file-based workflows** and **markdown custom commands** that any AI assistant can follow.
+
+**Primary Target**: [OpenCode](https://opencode.ai/) - open source AI coding agent
+**Also Supports**: [Codex CLI](https://github.com/openai/codex), [Claude Code](https://docs.anthropic.com/claude-code), and other terminal-based AI assistants
+
+## Design Principles
+
+### Tool-Agnostic Architecture
+
+1. **File-Based State**: All context lives in markdown files, not tool-specific memory
+2. **Custom Commands**: Workflows defined as markdown files any tool can load
+3. **No Vendor Lock-in**: Works with any AI model (Claude, GPT, Gemini, etc.)
+4. **Progressive Enhancement**: Tools with advanced features (subagents) can use them; others work sequentially
+
+### Why File-Based?
+
+| Approach | Pros | Cons |
+|----------|------|------|
+| Tool-specific APIs | Maximum capability | Vendor lock-in, fragile |
+| **File-based (chosen)** | Universal, persistent, debuggable | Slightly more verbose |
+| Memory/context only | Simple | Lost between sessions |
+
+---
 
 ## Problem Statement
 
 Current OpenSpec workflow gaps:
 
-1. **No Research Phase**: Proposals jump directly to specs without investigating the domain, existing solutions, or potential pitfalls
-2. **No Project-Level Roadmapping**: Changes are isolated; no way to plan multi-phase features or track milestone progress
-3. **No State Persistence**: Session context is lost; decisions, blockers, and rationale don't survive restarts
-4. **Limited Task Structure**: Checklists lack verification criteria, file targets, and completion definitions
-5. **No Parallel Execution Model**: Tasks execute sequentially without wave-based parallelization
-6. **No Adversarial Review**: Plans aren't stress-tested against edge cases or challenged systematically
+1. **No Research Phase**: Proposals jump directly to specs without domain investigation
+2. **No Project-Level Roadmapping**: Changes are isolated; no multi-phase planning
+3. **No State Persistence**: Session context lost between restarts
+4. **Limited Task Structure**: Checklists lack verification criteria
+5. **No Systematic Review**: Plans aren't stress-tested
+
+---
 
 ## Proposed Extensions
 
@@ -23,14 +46,14 @@ Current OpenSpec workflow gaps:
 
 Add a research stage that runs **before** proposal creation for complex changes.
 
-#### Structure
+#### Directory Structure
 
 ```
 openspec/
-├── research/                    # NEW: Domain research artifacts
-│   ├── SUMMARY.md              # Synthesized findings with roadmap implications
+├── research/                    # Domain research artifacts
+│   ├── SUMMARY.md              # Synthesized findings
 │   └── investigations/
-│       ├── stack-analysis.md   # Technology choices evaluation
+│       ├── stack-analysis.md   # Technology choices
 │       ├── feature-landscape.md # Table stakes vs differentiators
 │       ├── architecture.md     # System design considerations
 │       └── pitfalls.md         # Common mistakes and mitigations
@@ -39,48 +62,69 @@ openspec/
 #### Workflow
 
 ```
-┌─────────────────────┐
-│ User describes goal │
-└──────────┬──────────┘
-           │
-           ▼
+User describes goal
+        │
+        ▼
 ┌─────────────────────────────────────────────────┐
-│ Research Phase (parallel agents)                │
-│ ┌───────────┐ ┌───────────┐ ┌───────────┐      │
-│ │ Stack     │ │ Features  │ │ Pitfalls  │ ...  │
-│ │ Researcher│ │ Researcher│ │ Researcher│      │
-│ └───────────┘ └───────────┘ └───────────┘      │
-└──────────┬──────────────────────────────────────┘
-           │ synthesize
-           ▼
-┌─────────────────────┐
-│ SUMMARY.md with     │
-│ roadmap implications│
-└──────────┬──────────┘
-           │
-           ▼
-┌─────────────────────┐
-│ Standard OpenSpec   │
-│ proposal workflow   │
-└─────────────────────┘
+│ Research Phase                                  │
+│ (sequential or parallel depending on tool)      │
+│                                                 │
+│ 1. Stack analysis      → stack-analysis.md     │
+│ 2. Feature landscape   → feature-landscape.md  │
+│ 3. Architecture review → architecture.md       │
+│ 4. Pitfall research    → pitfalls.md           │
+│ 5. Synthesize          → SUMMARY.md            │
+└─────────────────────────────────────────────────┘
+        │
+        ▼
+Standard OpenSpec proposal workflow
 ```
 
-#### Research Agent Types
+#### Research Prompt Templates
 
-| Agent | Focus Area | Key Questions |
-|-------|------------|---------------|
-| **Stack Researcher** | Technology choices | Current best practices? Library ecosystem? Trade-offs? |
-| **Feature Researcher** | Capability landscape | Table stakes? Differentiators? What competitors do? |
-| **Architecture Researcher** | System design | Component boundaries? Data flow? Integration points? |
-| **Pitfall Researcher** | Risk mitigation | Common mistakes? Security concerns? Performance traps? |
+Research prompts are stored as markdown files that any AI tool can load:
+
+**`openspec/commands/research-stack.md`**
+```markdown
+# Research: Stack Analysis
+
+## Objective
+Evaluate technology choices for the proposed feature/project.
+
+## Process
+1. Identify the domain and key technical requirements
+2. Research current best practices (use web search)
+3. Evaluate library ecosystem and maturity
+4. Document trade-offs between options
+
+## Output Format
+Write findings to `openspec/research/investigations/stack-analysis.md`:
+
+## Stack Analysis: [Topic]
+
+### Requirements
+- [Key technical requirements]
+
+### Options Evaluated
+| Option | Pros | Cons | Maturity |
+|--------|------|------|----------|
+| ... | ... | ... | ... |
+
+### Recommendation
+[Choice] because [rationale]
+
+### Alternatives
+- [Option]: Use if [condition]
+```
 
 #### Research Output Template
 
+**`openspec/research/SUMMARY.md`**
 ```markdown
 # Research Summary: [Topic]
 
 ## Key Findings
-- [Bullet points of critical discoveries]
+- [Critical discoveries affecting the approach]
 
 ## Stack Recommendations
 - **Recommended**: [Choice] - [Rationale]
@@ -88,20 +132,20 @@ openspec/
 
 ## Feature Prioritization
 ### Table Stakes (Must Have)
-- [Features that are expected by users]
+- [Expected baseline features]
 
-### Differentiators (Could Win)
+### Differentiators (Competitive Advantage)
 - [Features that set the project apart]
 
 ## Architecture Considerations
-- [Key design decisions and their implications]
+- [Key design decisions and implications]
 
 ## Pitfalls to Avoid
 - [Risk] → [Mitigation strategy]
 
 ## Implications for Roadmap
 - Phase 1 should focus on: [...]
-- Consider ordering: [...]
+- Ordering considerations: [...]
 - Requires investigation before: [...]
 ```
 
@@ -111,11 +155,11 @@ openspec/
 
 Add project-level planning above individual changes.
 
-#### Structure
+#### Directory Structure
 
 ```
 openspec/
-├── planning/                    # NEW: Project planning artifacts
+├── planning/                    # Project planning artifacts
 │   ├── PROJECT.md              # Vision, constraints, stakeholders
 │   ├── ROADMAP.md              # Phased milestone plan
 │   ├── STATE.md                # Current decisions, blockers, context
@@ -123,8 +167,8 @@ openspec/
 │       ├── v1-core/
 │       │   ├── milestone.md    # Milestone definition
 │       │   └── phases/
-│       │       ├── phase-1/    # Database & models
-│       │       └── phase-2/    # API endpoints
+│       │       ├── phase-1/    # Phase details
+│       │       └── phase-2/
 │       └── v2-advanced/
 │           └── milestone.md
 ```
@@ -142,7 +186,6 @@ openspec/
 
 ## Constraints
 - Technical: [stack, compatibility requirements]
-- Timeline: [deadlines, dependencies]
 - Resources: [team size, expertise gaps]
 
 ## Stakeholders
@@ -150,6 +193,12 @@ openspec/
 
 ## Out of Scope
 - [Explicitly excluded features/concerns]
+
+## AI Assistant Notes
+[Special instructions for AI tools working on this project]
+- Preferred patterns: [...]
+- Avoid: [...]
+- Always check: [...]
 ```
 
 #### ROADMAP.md Template
@@ -184,6 +233,8 @@ Target: Advanced features and optimizations
 
 #### STATE.md Template
 
+This file persists context across sessions—critical for any AI tool:
+
 ```markdown
 # Project State
 
@@ -206,6 +257,14 @@ Last Updated: [timestamp]
 - Completed: [...]
 - Next: [...]
 - Issues encountered: [...]
+
+---
+## For AI Assistants
+When resuming work on this project:
+1. Read this STATE.md first
+2. Check ROADMAP.md for current phase
+3. Review any in-progress changes in `openspec/changes/`
+4. Continue from "Current Focus" above
 ```
 
 ---
@@ -226,152 +285,181 @@ Replace simple checklists with structured, verifiable tasks.
 ```markdown
 # Tasks for: [change-id]
 
-## Wave 1 (Parallel)
+## Execution Notes
+- **Tool**: Any (OpenCode, Codex, Claude Code)
+- **Mode**: Sequential (or parallel if tool supports)
+
+---
+
+## Wave 1
 
 ### Task 1.1: Create User Schema
-- **Type**: auto
 - **Files**: `src/db/schema/user.ts`, `src/db/migrations/001_users.sql`
 - **Dependencies**: None
 - **Action**:
   Create TypeScript schema definition and SQL migration for users table.
   Include fields: id (uuid), email (unique), created_at, updated_at.
 - **Verify**: `pnpm db:migrate && pnpm test:schema`
-- **Done**: Migration runs successfully, schema types export correctly
-- **Status**: pending
+- **Done When**: Migration runs successfully, schema types export correctly
+- **Status**: [ ] pending / [ ] in-progress / [x] complete
 
 ### Task 1.2: Create Auth Schema
-- **Type**: auto
 - **Files**: `src/db/schema/auth.ts`, `src/db/migrations/002_auth.sql`
 - **Dependencies**: None
 - **Action**:
   Create sessions and tokens tables for authentication.
 - **Verify**: `pnpm db:migrate`
-- **Done**: Tables created with foreign key to users
-- **Status**: pending
+- **Done When**: Tables created with foreign key to users
+- **Status**: [ ] pending
 
-## Wave 2 (After Wave 1)
+---
+
+## Wave 2 (after Wave 1 complete)
 
 ### Task 2.1: Implement Auth Service
-- **Type**: auto
 - **Files**: `src/services/auth.ts`, `src/services/auth.test.ts`
 - **Dependencies**: Task 1.1, Task 1.2
 - **Action**:
   Create authentication service with login, logout, session management.
 - **Verify**: `pnpm test src/services/auth.test.ts`
-- **Done**: All tests pass, service exports AuthService class
-- **Status**: pending
+- **Done When**: All tests pass, service exports AuthService class
+- **Status**: [ ] pending
+
+---
 
 ## Wave 3 (Checkpoint)
 
 ### Task 3.1: Review Authentication Flow
-- **Type**: checkpoint:human-verify
+- **Type**: checkpoint (requires human approval)
 - **Files**: `src/services/auth.ts`, `docs/auth-flow.md`
 - **Dependencies**: Task 2.1
 - **Action**:
   Generate authentication flow diagram and request human review.
-- **Verify**: User confirms flow is correct
-- **Done**: Approval received
-- **Status**: pending
+- **Done When**: User confirms flow is correct
+- **Status**: [ ] pending
 ```
 
 #### Task Types
 
 | Type | Behavior |
 |------|----------|
-| `auto` | Execute autonomously, verify automatically |
-| `checkpoint:human-verify` | Pause for human review before proceeding |
-| `checkpoint:decision` | Present options, wait for user choice |
+| (default) | Execute autonomously, verify automatically |
+| `checkpoint` | Pause for human review before proceeding |
+| `decision` | Present options, wait for user choice |
 | `research` | Investigate and report, don't implement |
 
 ---
 
-### 4. Parallel Execution Model
+### 4. Execution Model
 
-Enable wave-based parallel task execution.
-
-#### Execution Flow
+#### For Tools WITH Subagent Support (Claude Code)
 
 ```
-Wave 1 (parallel)
-├── Task 1.1 ──┐
-├── Task 1.2 ──┼── All complete? ──→ Wave 2
-└── Task 1.3 ──┘
-                    │
-Wave 2 (parallel)   │
-├── Task 2.1 ──┐    │
-└── Task 2.2 ──┼── All complete? ──→ Wave 3
-               │
-Wave 3 (checkpoint)
-└── Task 3.1 (human review) ──→ Continue or Revise
-```
-
-#### Subagent Isolation Pattern
-
-Each task executes in a fresh context to prevent quality degradation:
-
-```
-Orchestrator (lean context ~15%)
-├── Spawns: Executor for Task 1.1 (fresh 100% context)
-├── Spawns: Executor for Task 1.2 (fresh 100% context)
-└── Spawns: Executor for Task 1.3 (fresh 100% context)
+Orchestrator (lean context)
+├── Spawns: Executor for Task 1.1 (fresh context)
+├── Spawns: Executor for Task 1.2 (fresh context)
     │
     ▼ (all complete)
-    │
-├── Spawns: Executor for Task 2.1 (fresh 100% context)
-└── Spawns: Executor for Task 2.2 (fresh 100% context)
+├── Spawns: Executor for Task 2.1 (fresh context)
 ```
 
-#### Orchestrator Responsibilities
+#### For Tools WITHOUT Subagent Support (OpenCode, Codex)
 
-1. Load roadmap, state, and current phase
-2. Parse tasks.md to identify waves and dependencies
-3. Spawn parallel executors for each wave
-4. Collect results and update STATE.md
-5. Handle failures (retry, escalate, or skip)
-6. Commit atomically per task
+Sequential execution with context preservation via files:
+
+```
+1. Load STATE.md and tasks.md
+2. Find first pending task
+3. Execute task
+4. Run verify command
+5. Update task status in tasks.md
+6. Commit changes
+7. Update STATE.md with session notes
+8. Repeat from step 2
+```
+
+#### Execution Command (Custom Command)
+
+**`openspec/commands/execute.md`**
+```markdown
+# Execute OpenSpec Tasks
+
+## Objective
+Execute tasks from a change proposal sequentially, verifying each before proceeding.
+
+## Process
+1. Read `openspec/planning/STATE.md` for current context
+2. Read the specified change's `tasks.md`
+3. Find the first task with status `[ ] pending`
+4. Execute the task:
+   a. Read the files listed
+   b. Perform the action described
+   c. Run the verify command
+   d. If verify passes, mark status as `[x] complete`
+   e. If verify fails, stop and report the issue
+5. Commit the changes with message: `feat([change-id]): [task name]`
+6. Update STATE.md with session notes
+7. Proceed to next pending task
+
+## On Completion
+- Update ROADMAP.md if all tasks complete
+- Report summary of completed work
+```
 
 ---
 
-### 5. Adversarial Planning (Red Team Review)
+### 5. Adversarial Review (Red Team)
 
-Add systematic challenge phase to stress-test proposals before implementation.
+Add systematic challenge phase to stress-test proposals.
 
-#### Adversarial Agents
+#### Review Prompts
 
-| Agent | Challenge Focus |
-|-------|----------------|
-| **Security Adversary** | Attack vectors, auth bypasses, injection points |
-| **Scale Adversary** | Performance bottlenecks, N+1 queries, memory leaks |
-| **Edge Case Adversary** | Unusual inputs, race conditions, failure modes |
-| **UX Adversary** | Confusing flows, accessibility issues, error states |
-| **Maintenance Adversary** | Technical debt, testing gaps, documentation holes |
+Store as custom commands that any tool can execute:
 
-#### Workflow Integration
+**`openspec/commands/review-security.md`**
+```markdown
+# Security Review
 
+## Objective
+Find security vulnerabilities in the proposed changes.
+
+## Perspective
+You are a security researcher. Assume attackers are sophisticated.
+Find ways to exploit, bypass, or abuse the proposed system.
+
+## Process
+1. Read the proposal and affected specs
+2. Identify attack vectors:
+   - Authentication/authorization bypasses
+   - Injection points (SQL, XSS, command)
+   - Data exposure risks
+   - CSRF/SSRF vulnerabilities
+3. Rate each finding: HIGH / MEDIUM / LOW
+4. Suggest mitigations
+
+## Output
+Append findings to `openspec/changes/[change-id]/REVIEW.md`
 ```
-┌─────────────────────┐
-│ Proposal Complete   │
-└──────────┬──────────┘
-           │
-           ▼
-┌─────────────────────────────────────────────────┐
-│ Adversarial Review (parallel)                   │
-│ ┌───────────┐ ┌───────────┐ ┌───────────┐      │
-│ │ Security  │ │ Scale     │ │ Edge Case │ ...  │
-│ │ Adversary │ │ Adversary │ │ Adversary │      │
-│ └───────────┘ └───────────┘ └───────────┘      │
-└──────────┬──────────────────────────────────────┘
-           │ findings
-           ▼
-┌─────────────────────┐
-│ REVIEW.md with      │──→ Revise proposal?
-│ issues & mitigations│
-└──────────┬──────────┘
-           │ addressed
-           ▼
-┌─────────────────────┐
-│ Implementation      │
-└─────────────────────┘
+
+**`openspec/commands/review-scale.md`**
+```markdown
+# Scale Review
+
+## Objective
+Identify performance bottlenecks and scaling issues.
+
+## Perspective
+What breaks at 10x, 100x, 1000x scale?
+
+## Process
+1. Review database queries for N+1 problems
+2. Check for missing indexes
+3. Identify memory-intensive operations
+4. Look for blocking calls in hot paths
+5. Evaluate caching opportunities
+
+## Output
+Append findings to `openspec/changes/[change-id]/REVIEW.md`
 ```
 
 #### REVIEW.md Template
@@ -382,23 +470,23 @@ Add systematic challenge phase to stress-test proposals before implementation.
 ## Security Review
 ### Issues Found
 - **HIGH**: [Issue description]
-  - Attack vector: [How it could be exploited]
+  - Attack vector: [How exploited]
   - Mitigation: [Required fix]
   - Status: [ ] Addressed
 
 ### Recommendations
-- [Proactive security improvements]
+- [Proactive improvements]
 
 ## Scale Review
 ### Issues Found
 - **MEDIUM**: [Performance concern]
-  - Impact: [When it becomes a problem]
-  - Mitigation: [Optimization approach]
+  - Impact: [When problematic]
+  - Mitigation: [Optimization]
   - Status: [ ] Addressed
 
 ## Edge Case Review
 ### Issues Found
-- **LOW**: [Edge case scenario]
+- **LOW**: [Edge case]
   - Trigger: [How to reproduce]
   - Handling: [Expected behavior]
   - Status: [ ] Addressed
@@ -412,12 +500,58 @@ Add systematic challenge phase to stress-test proposals before implementation.
 
 ---
 
-### 6. New CLI Commands
+### 6. Custom Commands
+
+OpenSpec workflows are implemented as markdown custom commands compatible with all tools.
+
+#### Directory Structure
+
+```
+openspec/
+├── commands/                    # Custom command definitions
+│   ├── research-stack.md       # Stack analysis
+│   ├── research-features.md    # Feature landscape
+│   ├── research-pitfalls.md    # Risk identification
+│   ├── research-synthesize.md  # Combine findings
+│   ├── plan-init.md            # Initialize planning
+│   ├── plan-milestone.md       # Create milestone
+│   ├── execute.md              # Execute tasks
+│   ├── review-security.md      # Security review
+│   ├── review-scale.md         # Scale review
+│   ├── review-edge.md          # Edge case review
+│   └── state-update.md         # Update STATE.md
+```
+
+#### Tool-Specific Loading
+
+| Tool | How to Load Custom Commands |
+|------|---------------------------|
+| **OpenCode** | Automatic from `.opencode/commands/` or specify path |
+| **Codex CLI** | Load via `@file` or custom instructions |
+| **Claude Code** | Custom slash commands or CLAUDE.md |
+
+#### Example: OpenCode Integration
+
+```bash
+# Copy commands to OpenCode location
+cp -r openspec/commands .opencode/commands/openspec
+
+# Use in OpenCode
+/openspec/research-stack "authentication system"
+/openspec/execute add-user-auth
+/openspec/review-security add-user-auth
+```
+
+---
+
+## CLI Commands
+
+The `openspec` CLI provides commands that work independently of AI tool:
 
 ```bash
 # Research commands
-openspec research [topic]              # Run parallel research agents
-openspec research --synthesize         # Generate SUMMARY.md from investigations
+openspec research init                 # Create research/ structure
+openspec research status               # Show research progress
 
 # Planning commands
 openspec plan init                     # Initialize planning/ directory
@@ -425,21 +559,14 @@ openspec plan milestone [name]         # Create new milestone
 openspec plan phase [milestone] [name] # Add phase to milestone
 openspec plan status                   # Show roadmap progress
 
-# Execution commands
-openspec execute [change-id]           # Execute tasks with wave parallelism
-openspec execute --wave [n]            # Execute specific wave only
-openspec execute --dry-run             # Show execution plan without running
-
-# Review commands
-openspec review [change-id]            # Run adversarial review
-openspec review --agents [list]        # Run specific adversaries
-openspec review --summary              # Show review status
-
 # State commands
 openspec state                         # Show current STATE.md
-openspec state update                  # Update state interactively
-openspec state decision [text]         # Record a decision
-openspec state blocker [text]          # Record a blocker
+openspec state decision "[text]"       # Record a decision
+openspec state blocker "[text]"        # Record a blocker
+openspec state note "[text]"           # Add session note
+
+# Validation
+openspec validate [change-id] --strict # Validate including tasks format
 ```
 
 ---
@@ -448,75 +575,56 @@ openspec state blocker [text]          # Record a blocker
 
 ### Phase 1: Foundation
 - Add `planning/` directory structure to `openspec init`
-- Create PROJECT.md, STATE.md templates
-- Add `openspec state` commands for state management
-- Extend tasks.md parser to support structured format
+- Create PROJECT.md, STATE.md, ROADMAP.md templates
+- Add `openspec state` commands
+- Document tool-agnostic workflow
 
 ### Phase 2: Research
-- Implement research agent prompts
-- Add `openspec research` command
-- Create SUMMARY.md generation
-- Integrate research into proposal workflow
+- Create research command templates
+- Add `openspec/commands/` structure
+- Document integration with OpenCode, Codex, Claude Code
 
-### Phase 3: Roadmapping
-- Add ROADMAP.md support
-- Implement milestone and phase tracking
-- Link changes to phases
-- Add `openspec plan` commands
+### Phase 3: Enhanced Tasks
+- Extend tasks.md parser for structured format
+- Add wave detection and dependency validation
+- Create execution command template
 
-### Phase 4: Parallel Execution
-- Implement wave-based task parsing
-- Add subagent orchestration
-- Create execution verification
-- Add `openspec execute` command
-
-### Phase 5: Adversarial Review
-- Implement adversarial agent prompts
+### Phase 4: Adversarial Review
+- Create review command templates
 - Add REVIEW.md generation
-- Create review gating workflow
-- Add `openspec review` command
+- Document review workflow
 
 ---
 
-## Comparison: OpenSpec vs OpenSpec+Planning
+## Tool Compatibility Matrix
+
+| Feature | OpenCode | Codex CLI | Claude Code |
+|---------|----------|-----------|-------------|
+| Custom commands | ✅ Native | ✅ Via @file | ✅ Slash commands |
+| File-based state | ✅ | ✅ | ✅ |
+| Web search (research) | ✅ | ✅ | ✅ |
+| Parallel execution | ❌ Sequential | ❌ Sequential | ✅ Subagents |
+| Checkpoint pauses | ✅ | ✅ | ✅ |
+
+---
+
+## Comparison: Before and After
 
 | Capability | Current OpenSpec | With Planning Extension |
 |------------|-----------------|------------------------|
-| Research | None | Parallel domain investigation |
-| Project vision | project.md (optional) | PROJECT.md (structured) |
-| Roadmapping | None | Milestones, phases, progress tracking |
-| State persistence | None | STATE.md with decisions/blockers |
-| Task structure | Checklists | Structured with verify/done criteria |
-| Execution | Sequential | Wave-based parallel |
-| Review | Manual | Automated adversarial agents |
-| Context management | N/A | Subagent isolation |
-
----
-
-## Risks & Mitigations
-
-| Risk | Mitigation |
-|------|-----------|
-| Complexity overhead | Make all features opt-in; keep simple path available |
-| Research adds latency | Allow skipping research for small changes |
-| State file conflicts | Use append-only patterns; timestamp entries |
-| Subagent coordination | Clear dependency graphs; fail-fast on errors |
-| Over-engineering | Default to minimal planning; expand as needed |
-
----
-
-## Open Questions
-
-1. Should research be mandatory for changes above a certain size?
-2. How to handle cross-change dependencies in parallel execution?
-3. What's the right granularity for adversarial review (per-change vs per-phase)?
-4. Should STATE.md be version-controlled or gitignored?
-5. How to integrate with existing CI/CD pipelines?
+| Research | None | Structured investigation |
+| Project vision | project.md (basic) | PROJECT.md (structured) |
+| Roadmapping | None | Milestones, phases, tracking |
+| State persistence | None | STATE.md across sessions |
+| Task structure | Checklists | Structured with verify/done |
+| Review | Manual | Systematic adversarial |
+| Tool support | Any | Any (optimized for OpenCode) |
 
 ---
 
 ## References
 
-- [GSD (Get Shit Done)](https://github.com/glittercowboy/get-shit-done) - Context engineering and subagent orchestration patterns
-- [OpenSpec Current Workflow](./experimental-workflow.md) - Existing artifact-based workflow
-- [AGENTS.md Convention](https://agents.md/) - Standard for AI agent instructions
+- [OpenCode](https://opencode.ai/) - Primary target, open source AI coding agent
+- [Codex CLI](https://github.com/openai/codex) - OpenAI's terminal coding agent
+- [Claude Code](https://docs.anthropic.com/claude-code) - Anthropic's CLI tool
+- [GSD](https://github.com/glittercowboy/get-shit-done) - Context engineering patterns

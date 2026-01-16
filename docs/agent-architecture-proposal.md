@@ -1,677 +1,793 @@
 # OpenSpec Agent Architecture Proposal
 
-> Extending OpenSpec with specialized agents, subagents, and skills for enhanced AI-assisted development
+> Tool-agnostic agent system with configurable models, context sizes, and prompts
 
 ## Overview
 
-This proposal defines an agent architecture for OpenSpec that enables:
-- **Specialized agents** for different workflow stages
-- **Subagent orchestration** for parallel processing
-- **Skills** as reusable, composable capabilities
-- **Context isolation** to prevent quality degradation
+This proposal defines an agent architecture for OpenSpec that:
+- Works across **OpenCode**, **Codex CLI**, **Claude Code**, and other AI tools
+- Uses **file-based configuration** for models, context sizes, and prompts
+- Supports **any AI model** (Claude, GPT, Gemini, Llama, etc.)
+- Enables **progressive enhancement** (parallel execution where supported)
 
-## Agent Taxonomy
+## Design Principles
 
-### 1. Orchestrator Agents (Primary)
+### 1. Tool-Agnostic
+All agent definitions are markdown files that any AI tool can load and execute.
 
-Top-level agents that coordinate workflows and spawn subagents.
+### 2. Model-Flexible
+Configure which model to use per agent type. Not all models have the same capabilities or context windows.
 
-| Agent | Role | Spawns |
-|-------|------|--------|
-| `openspec-orchestrator` | Main workflow coordinator | All subagent types |
-| `research-orchestrator` | Research phase coordinator | Research agents |
-| `planning-orchestrator` | Roadmap/phase coordinator | Planning agents |
-| `execution-orchestrator` | Task execution coordinator | Executor agents |
-| `review-orchestrator` | Adversarial review coordinator | Review agents |
+### 3. Context-Aware
+Specify context budgets per agent. A 32k model needs different chunking than a 200k model.
 
-### 2. Research Agents (Subagents)
-
-Specialized agents for domain investigation.
-
-```yaml
-research-agents:
-  stack-researcher:
-    focus: Technology evaluation
-    inputs: [domain, constraints, existing-stack]
-    outputs: [stack-analysis.md]
-    tools: [WebSearch, WebFetch, Read, Grep]
-
-  feature-researcher:
-    focus: Capability landscape
-    inputs: [domain, competitors, user-needs]
-    outputs: [feature-landscape.md]
-    tools: [WebSearch, WebFetch, Read]
-
-  architecture-researcher:
-    focus: System design patterns
-    inputs: [domain, scale-requirements, constraints]
-    outputs: [architecture.md]
-    tools: [WebSearch, Read, Grep, Glob]
-
-  pitfall-researcher:
-    focus: Risk identification
-    inputs: [domain, technology-choices]
-    outputs: [pitfalls.md]
-    tools: [WebSearch, WebFetch, Read]
-
-  research-synthesizer:
-    focus: Combine findings
-    inputs: [all-research-outputs]
-    outputs: [SUMMARY.md]
-    tools: [Read, Write]
-```
-
-### 3. Planning Agents (Subagents)
-
-Agents for roadmap and phase planning.
-
-```yaml
-planning-agents:
-  requirements-extractor:
-    focus: Derive requirements from research
-    inputs: [research-summary, user-goals]
-    outputs: [REQUIREMENTS.md]
-    tools: [Read, Write]
-
-  roadmapper:
-    focus: Phase and milestone planning
-    inputs: [requirements, constraints]
-    outputs: [ROADMAP.md]
-    tools: [Read, Write]
-
-  phase-planner:
-    focus: Detailed phase planning
-    inputs: [roadmap, phase-number, research]
-    outputs: [phase/PLAN.md]
-    tools: [Read, Write, Grep, Glob]
-
-  plan-checker:
-    focus: Validate and refine plans
-    inputs: [plan, requirements, specs]
-    outputs: [plan-feedback.md]
-    tools: [Read, Grep]
-```
-
-### 4. Executor Agents (Subagents)
-
-Agents for task implementation.
-
-```yaml
-executor-agents:
-  task-executor:
-    focus: Implement single task
-    inputs: [task-definition, context-files]
-    outputs: [code-changes, SUMMARY.md]
-    tools: [Read, Write, Edit, Bash, Grep, Glob]
-    context: fresh  # Always spawns with clean context
-
-  test-executor:
-    focus: Run and verify tests
-    inputs: [test-command, expected-outcomes]
-    outputs: [test-results.md]
-    tools: [Bash, Read]
-
-  commit-executor:
-    focus: Create atomic commits
-    inputs: [changes, commit-message]
-    outputs: [commit-hash]
-    tools: [Bash]
-```
-
-### 5. Review Agents (Adversaries)
-
-Agents for systematic challenge and review.
-
-```yaml
-review-agents:
-  security-adversary:
-    focus: Attack vector identification
-    inputs: [specs, code-changes]
-    outputs: [security-review.md]
-    tools: [Read, Grep, Glob]
-    perspective: "Find ways to exploit this"
-
-  scale-adversary:
-    focus: Performance bottlenecks
-    inputs: [specs, code-changes, architecture]
-    outputs: [scale-review.md]
-    tools: [Read, Grep]
-    perspective: "What breaks at 10x, 100x, 1000x scale?"
-
-  edge-case-adversary:
-    focus: Unusual inputs and states
-    inputs: [specs, scenarios]
-    outputs: [edge-case-review.md]
-    tools: [Read]
-    perspective: "What weird inputs cause problems?"
-
-  ux-adversary:
-    focus: User experience issues
-    inputs: [specs, ui-code]
-    outputs: [ux-review.md]
-    tools: [Read, Grep]
-    perspective: "How will users get confused?"
-
-  maintenance-adversary:
-    focus: Long-term code health
-    inputs: [code-changes, test-coverage]
-    outputs: [maintenance-review.md]
-    tools: [Read, Grep, Glob, Bash]
-    perspective: "What will be painful to maintain?"
-
-  review-synthesizer:
-    focus: Combine review findings
-    inputs: [all-review-outputs]
-    outputs: [REVIEW.md]
-    tools: [Read, Write]
-```
+### 4. File-Based State
+All coordination happens through files, not tool-specific APIs.
 
 ---
 
-## Skill System
+## Configuration System
 
-Skills are reusable capabilities that agents can invoke. They encapsulate common operations with consistent interfaces.
+### Master Configuration File
 
-### Skill Categories
-
-#### Research Skills
-```yaml
-skills:
-  web-research:
-    description: Search and synthesize web information
-    inputs:
-      query: string
-      depth: quick | standard | comprehensive
-    outputs:
-      findings: markdown
-      sources: url[]
-
-  codebase-analysis:
-    description: Analyze existing codebase structure
-    inputs:
-      path: string
-      focus: architecture | patterns | dependencies | all
-    outputs:
-      analysis: markdown
-      key-files: path[]
-
-  competitor-analysis:
-    description: Research competitor solutions
-    inputs:
-      domain: string
-      competitors: string[]
-    outputs:
-      comparison: markdown
-      differentiators: string[]
-```
-
-#### Planning Skills
-```yaml
-skills:
-  requirement-derivation:
-    description: Extract requirements from context
-    inputs:
-      research: markdown
-      user-goals: string[]
-    outputs:
-      requirements:
-        v1: requirement[]
-        v2: requirement[]
-        out-of-scope: string[]
-
-  task-breakdown:
-    description: Break work into atomic tasks
-    inputs:
-      requirement: requirement
-      constraints: string[]
-    outputs:
-      tasks: task[]
-      waves: wave[]
-      dependencies: dependency[]
-
-  risk-assessment:
-    description: Identify and prioritize risks
-    inputs:
-      plan: markdown
-      context: markdown
-    outputs:
-      risks: risk[]
-      mitigations: mitigation[]
-```
-
-#### Implementation Skills
-```yaml
-skills:
-  code-generation:
-    description: Generate code from specification
-    inputs:
-      spec: spec
-      target-files: path[]
-      conventions: markdown
-    outputs:
-      code-changes: change[]
-
-  test-generation:
-    description: Generate tests from scenarios
-    inputs:
-      scenarios: scenario[]
-      test-framework: string
-    outputs:
-      test-code: change[]
-
-  migration-generation:
-    description: Generate database migrations
-    inputs:
-      schema-changes: change[]
-      db-type: string
-    outputs:
-      migration-files: change[]
-```
-
-#### Review Skills
-```yaml
-skills:
-  security-audit:
-    description: Check for security vulnerabilities
-    inputs:
-      code-paths: path[]
-      threat-model: markdown
-    outputs:
-      vulnerabilities: vulnerability[]
-      recommendations: string[]
-
-  performance-analysis:
-    description: Identify performance issues
-    inputs:
-      code-paths: path[]
-      scale-requirements: markdown
-    outputs:
-      bottlenecks: bottleneck[]
-      optimizations: string[]
-
-  test-coverage-analysis:
-    description: Analyze test coverage gaps
-    inputs:
-      specs: spec[]
-      test-paths: path[]
-    outputs:
-      coverage: percentage
-      gaps: gap[]
-```
-
----
-
-## Agent Context Management
-
-### Context Isolation Strategy
-
-```
-┌─────────────────────────────────────────────────────────┐
-│ Orchestrator Context (~15% budget)                      │
-│ - Roadmap, current phase, wave status                   │
-│ - Task dependency graph                                 │
-│ - Result summaries from subagents                       │
-└─────────────────────────────────────────────────────────┘
-           │
-           │ spawns with fresh context
-           ▼
-┌─────────────────────────────────────────────────────────┐
-│ Subagent Context (~100% budget each)                    │
-│ - Specific task definition                              │
-│ - Required files only                                   │
-│ - Relevant specs/research                               │
-│ - No accumulated history                                │
-└─────────────────────────────────────────────────────────┘
-```
-
-### Context Loading Strategy
+**`openspec/config.yaml`** (or `config.json`)
 
 ```yaml
-context-loading:
-  always-load:
-    - openspec/planning/STATE.md       # Current project state
-    - openspec/planning/PROJECT.md     # Project vision
+# OpenSpec Agent Configuration
+# Configures models, context sizes, and behavior for different AI tools
 
-  load-for-planning:
-    - openspec/planning/ROADMAP.md     # Phase structure
-    - openspec/planning/REQUIREMENTS.md
-    - openspec/research/SUMMARY.md     # If exists
+version: "1.0"
 
-  load-for-execution:
-    - Current task definition only
-    - Target files specified in task
-    - Relevant spec (single capability)
-
-  load-for-review:
-    - Changed files only
-    - Affected specs
-    - Original requirements
-```
-
-### Result Handoff Pattern
-
-```
-Subagent completes task
-        │
-        ▼
-┌─────────────────────┐
-│ Write SUMMARY.md    │  (structured output)
-│ - What was done     │
-│ - Files changed     │
-│ - Verification      │
-│ - Issues found      │
-└─────────┬───────────┘
-          │
-          ▼
-┌─────────────────────┐
-│ Orchestrator reads  │  (minimal context transfer)
-│ SUMMARY.md only     │
-└─────────────────────┘
-```
-
----
-
-## Orchestration Patterns
-
-### Pattern 1: Parallel Research
-
-```python
-# Pseudo-code for parallel research orchestration
-
-def research_phase(domain: str, constraints: dict):
-    # Spawn all researchers in parallel
-    tasks = [
-        spawn_agent("stack-researcher", domain=domain),
-        spawn_agent("feature-researcher", domain=domain),
-        spawn_agent("architecture-researcher", domain=domain),
-        spawn_agent("pitfall-researcher", domain=domain),
-    ]
-
-    # Wait for all to complete (blocks, no polling)
-    results = await_all(tasks)
-
-    # Synthesize results
-    summary = spawn_agent("research-synthesizer",
-                          inputs=results)
-
-    return summary
-```
-
-### Pattern 2: Wave-Based Execution
-
-```python
-def execute_phase(phase: Phase):
-    waves = parse_waves(phase.tasks)
-
-    for wave in waves:
-        # All tasks in wave run in parallel
-        parallel_tasks = [
-            spawn_agent("task-executor",
-                        task=task,
-                        context=get_task_context(task))
-            for task in wave.tasks
-        ]
-
-        results = await_all(parallel_tasks)
-
-        # Check all succeeded
-        if any(r.failed for r in results):
-            handle_failures(results)
-            break
-
-        # Commit atomically per task
-        for result in results:
-            spawn_agent("commit-executor",
-                        changes=result.changes)
-
-        # Update state
-        update_state(wave, results)
-```
-
-### Pattern 3: Adversarial Review
-
-```python
-def adversarial_review(change_id: str, agents: list = None):
-    agents = agents or [
-        "security-adversary",
-        "scale-adversary",
-        "edge-case-adversary"
-    ]
-
-    # Load change context
-    change = load_change(change_id)
-
-    # Run all adversaries in parallel
-    reviews = [
-        spawn_agent(agent,
-                    specs=change.specs,
-                    code=change.code)
-        for agent in agents
-    ]
-
-    results = await_all(reviews)
-
-    # Synthesize into REVIEW.md
-    review = spawn_agent("review-synthesizer",
-                         findings=results)
-
-    return review
-```
-
----
-
-## Skill Composition
-
-Skills can be composed to create higher-level capabilities.
-
-### Example: Full Feature Implementation
-
-```yaml
-workflow: implement-feature
-skills:
-  1. web-research:
-      query: "{feature} implementation best practices"
-      depth: quick
-
-  2. codebase-analysis:
-      focus: patterns
-
-  3. requirement-derivation:
-      inputs: [step-1.findings, step-2.analysis]
-
-  4. task-breakdown:
-      inputs: [step-3.requirements]
-
-  5. for-each task in step-4.tasks:
-      code-generation:
-        spec: task.spec
-
-  6. test-generation:
-      scenarios: [all task scenarios]
-
-  7. security-audit:
-      code-paths: [all generated files]
-```
-
-### Example: Quick Bug Fix
-
-```yaml
-workflow: quick-fix
-skills:
-  1. codebase-analysis:
-      focus: patterns
-      path: "{affected-area}"
-
-  2. code-generation:
-      spec: "{fix-description}"
-
-  3. test-generation:
-      scenarios: [regression scenario]
-```
-
----
-
-## Configuration
-
-### Agent Configuration File
-
-```yaml
-# openspec/agents.yaml
-
+# Default settings (can be overridden per-agent)
 defaults:
-  context-budget: 100000  # tokens
-  timeout: 300            # seconds
-  retry: 2
+  model: "auto"                    # Use tool's default model
+  context_budget: 100000           # Default context budget in tokens
+  timeout: 300                     # Seconds before timing out
+  retry_count: 2                   # Retries on failure
 
-orchestrators:
-  execution-orchestrator:
-    context-budget: 20000  # lean orchestrator
+# Tool-specific settings
+tools:
+  opencode:
+    default_model: "claude-sonnet" # Or "gpt-4o", "gemini-pro", etc.
+    models:
+      fast: "claude-haiku"         # For quick tasks
+      balanced: "claude-sonnet"    # Default
+      powerful: "claude-opus"      # For complex reasoning
+    context_limits:
+      claude-haiku: 200000
+      claude-sonnet: 200000
+      claude-opus: 200000
+      gpt-4o: 128000
+      gpt-4o-mini: 128000
+      gemini-pro: 1000000
+      llama-3: 8000
 
-subagents:
-  task-executor:
-    context-budget: 200000  # full context
-    tools:
-      - Read
-      - Write
-      - Edit
-      - Bash
-      - Grep
-      - Glob
+  codex:
+    default_model: "gpt-4o"
+    models:
+      fast: "gpt-4o-mini"
+      balanced: "gpt-4o"
+      powerful: "o1"
+    context_limits:
+      gpt-4o: 128000
+      gpt-4o-mini: 128000
+      o1: 200000
+      codex-max: 200000
 
-  security-adversary:
-    context-budget: 100000
-    tools:
-      - Read
-      - Grep
-      - Glob
-    system-prompt: |
-      You are a security researcher. Your job is to find
-      vulnerabilities in the proposed changes. Be thorough
-      and adversarial. Assume attackers are sophisticated.
+  claude-code:
+    default_model: "sonnet"
+    models:
+      fast: "haiku"
+      balanced: "sonnet"
+      powerful: "opus"
+    context_limits:
+      haiku: 200000
+      sonnet: 200000
+      opus: 200000
 
-skills:
-  web-research:
-    enabled: true
-    cache-duration: 3600  # seconds
+# Agent-specific configurations
+agents:
+  # Research agents - benefit from web search, need moderate context
+  research:
+    model_preference: "balanced"
+    context_budget: 50000          # Research outputs should be concise
+    requires:
+      - web_search
+      - file_read
 
-  code-generation:
-    enabled: true
-    require-tests: true
+  # Execution agents - need full context for code changes
+  execution:
+    model_preference: "balanced"
+    context_budget: "max"          # Use full available context
+    requires:
+      - file_read
+      - file_write
+      - bash
+
+  # Review agents - adversarial, benefit from reasoning
+  review:
+    model_preference: "powerful"   # Better reasoning for security review
+    context_budget: 80000
+    requires:
+      - file_read
+
+  # Planning agents - need reasoning but not huge context
+  planning:
+    model_preference: "balanced"
+    context_budget: 60000
+    requires:
+      - file_read
+      - file_write
+
+# Context management strategies
+context_strategy:
+  # When context exceeds budget
+  overflow_handling: "summarize"   # Options: summarize, truncate, error
+
+  # Files always loaded (if they exist)
+  always_include:
+    - "openspec/planning/STATE.md"
+    - "openspec/planning/PROJECT.md"
+
+  # Files to prioritize when space is limited
+  priority_files:
+    - "openspec/planning/ROADMAP.md"
+    - "openspec/research/SUMMARY.md"
 ```
 
-### Workflow Configuration
+### Environment-Based Overrides
+
+Support environment variables for CI/CD and different setups:
+
+```bash
+# Override model for all agents
+export OPENSPEC_MODEL="gpt-4o"
+
+# Override context budget
+export OPENSPEC_CONTEXT_BUDGET=32000
+
+# Force specific tool behavior
+export OPENSPEC_TOOL="opencode"
+```
+
+---
+
+## Agent Definitions
+
+Agents are defined as markdown prompt files with YAML frontmatter for configuration.
+
+### Agent File Structure
+
+```
+openspec/
+├── agents/                      # Agent prompt definitions
+│   ├── research/
+│   │   ├── stack-researcher.md
+│   │   ├── feature-researcher.md
+│   │   ├── architecture-researcher.md
+│   │   ├── pitfall-researcher.md
+│   │   └── synthesizer.md
+│   ├── planning/
+│   │   ├── requirements-extractor.md
+│   │   ├── roadmapper.md
+│   │   └── task-planner.md
+│   ├── execution/
+│   │   ├── task-executor.md
+│   │   └── verifier.md
+│   └── review/
+│       ├── security-adversary.md
+│       ├── scale-adversary.md
+│       ├── edge-case-adversary.md
+│       └── review-synthesizer.md
+```
+
+### Agent Prompt Format
+
+**`openspec/agents/research/stack-researcher.md`**
+
+```markdown
+---
+# Agent Configuration (YAML frontmatter)
+name: stack-researcher
+category: research
+model_preference: balanced      # fast | balanced | powerful
+context_budget: 50000           # tokens (or "max" for full)
+timeout: 180                    # seconds
+
+# Required capabilities
+requires:
+  - web_search
+  - file_read
+
+# Input files (loaded into context)
+inputs:
+  required:
+    - "openspec/planning/PROJECT.md"
+  optional:
+    - "openspec/planning/STATE.md"
+    - "openspec/research/SUMMARY.md"
+
+# Output specification
+outputs:
+  file: "openspec/research/investigations/stack-analysis.md"
+  append: false
+---
+
+# Stack Researcher Agent
+
+## Role
+You are a technology researcher evaluating stack choices for a software project.
+
+## Objective
+Research and evaluate technology options for the specified domain, providing actionable recommendations.
+
+## Process
+
+1. **Understand Requirements**
+   - Read PROJECT.md for project vision and constraints
+   - Identify key technical requirements from the domain
+
+2. **Research Current Landscape**
+   - Search for current best practices (2024-2025)
+   - Evaluate popular libraries and frameworks
+   - Check GitHub stars, npm downloads, maintenance status
+
+3. **Evaluate Options**
+   - Compare 3-5 viable options
+   - Consider: maturity, community, performance, learning curve
+   - Note any security concerns or known issues
+
+4. **Make Recommendations**
+   - Provide clear primary recommendation with rationale
+   - List alternatives for different constraints
+
+## Output Format
+
+Write to `{output_file}`:
+
+```markdown
+# Stack Analysis: [Domain]
+
+Generated: [date]
+Model: [model used]
+
+## Requirements
+- [Key technical requirements derived from project]
+
+## Options Evaluated
+
+| Option | Pros | Cons | Maturity | Recommendation |
+|--------|------|------|----------|----------------|
+| [Lib1] | ... | ... | High/Med/Low | Primary / Alternative / Avoid |
+
+## Primary Recommendation
+**[Choice]**
+
+Rationale: [Why this is the best fit]
+
+## Alternatives
+- **[Option 2]**: Use if [specific constraint]
+- **[Option 3]**: Use if [different constraint]
+
+## Risks
+- [Risk]: [Mitigation]
+
+## References
+- [Links to documentation, benchmarks, etc.]
+```
+
+## Important Notes
+- Focus on practical, production-ready options
+- Consider the project's stated constraints
+- Be specific about trade-offs, not vague
+- Include version numbers where relevant
+```
+
+### Agent with Model Override
+
+**`openspec/agents/review/security-adversary.md`**
+
+```markdown
+---
+name: security-adversary
+category: review
+model_preference: powerful       # Security review benefits from stronger reasoning
+context_budget: 80000
+timeout: 300
+
+requires:
+  - file_read
+
+inputs:
+  required:
+    - "openspec/changes/{change_id}/proposal.md"
+    - "openspec/changes/{change_id}/specs/**/*.md"
+  optional:
+    - "openspec/specs/**/*.md"  # Existing specs for context
+
+outputs:
+  file: "openspec/changes/{change_id}/REVIEW.md"
+  append: true                   # Multiple reviewers append to same file
+  section: "## Security Review"
+---
+
+# Security Adversary Agent
+
+## Role
+You are a security researcher performing adversarial analysis. Your job is to find vulnerabilities, not validate the design.
+
+## Perspective
+Assume attackers are sophisticated and motivated. Think like a malicious actor trying to exploit this system.
+
+## Process
+
+1. **Understand the Attack Surface**
+   - Read the proposal and spec changes
+   - Identify all user inputs, API endpoints, data flows
+   - Map trust boundaries
+
+2. **Systematic Vulnerability Search**
+
+   Check for each category:
+
+   **Authentication & Authorization**
+   - [ ] Can auth be bypassed?
+   - [ ] Are there privilege escalation paths?
+   - [ ] Session management issues?
+
+   **Injection Attacks**
+   - [ ] SQL injection points?
+   - [ ] XSS vulnerabilities?
+   - [ ] Command injection?
+   - [ ] Path traversal?
+
+   **Data Security**
+   - [ ] Sensitive data exposure?
+   - [ ] Insecure data storage?
+   - [ ] Insufficient encryption?
+
+   **API Security**
+   - [ ] Rate limiting gaps?
+   - [ ] CSRF vulnerabilities?
+   - [ ] SSRF possibilities?
+
+3. **Rate and Document Findings**
+   - HIGH: Exploitable with significant impact
+   - MEDIUM: Exploitable with moderate impact or hard to exploit
+   - LOW: Minor issues or theoretical
+
+## Output Format
+
+Append to `{output_file}` under `## Security Review`:
+
+```markdown
+## Security Review
+
+Reviewed: [date]
+Model: [model used]
+Reviewer: security-adversary
+
+### Issues Found
+
+#### HIGH: [Issue Title]
+- **Location**: [file:line or component]
+- **Attack Vector**: [How an attacker would exploit this]
+- **Impact**: [What damage could occur]
+- **Mitigation**: [Required fix]
+- **Status**: [ ] Addressed
+
+#### MEDIUM: [Issue Title]
+...
+
+### Recommendations
+- [Proactive security improvements not tied to specific issues]
+
+### Areas Not Reviewed
+- [Any areas skipped due to context limits or scope]
+```
+
+## Important Notes
+- Be thorough but practical—focus on real risks
+- Don't flag theoretical issues without exploitation path
+- Suggest specific mitigations, not vague advice
+- If you can't find issues, say so—don't invent them
+```
+
+---
+
+## Context Management
+
+### Context Budget Strategies
+
+Different models have different context windows. The system adapts:
 
 ```yaml
-# openspec/workflows.yaml
+# In config.yaml
+context_strategy:
+  # For small context models (8k-32k)
+  small_context:
+    max_file_size: 5000          # Truncate large files
+    max_files: 5                  # Limit loaded files
+    summarize_threshold: 3000    # Summarize files over this size
 
-proposal:
-  research:
-    enabled: true
-    depth: standard  # quick | standard | comprehensive
+  # For medium context models (64k-128k)
+  medium_context:
+    max_file_size: 20000
+    max_files: 15
+    summarize_threshold: 10000
+
+  # For large context models (200k+)
+  large_context:
+    max_file_size: 50000
+    max_files: 50
+    summarize_threshold: 30000
+```
+
+### Dynamic Context Loading
+
+The system loads context based on available budget:
+
+```
+Available Context: [model's limit] - [system prompt] - [buffer]
+                 = Usable Context Budget
+
+Loading Priority:
+1. Always-include files (STATE.md, PROJECT.md)
+2. Required inputs from agent definition
+3. Optional inputs (if space remains)
+4. Related files (if space remains)
+```
+
+### Context Overflow Handling
+
+When content exceeds budget:
+
+1. **Summarize** (default): Generate summary of large files
+2. **Truncate**: Keep first N tokens with "[truncated]" marker
+3. **Error**: Fail and request manual intervention
+
+---
+
+## Execution Patterns
+
+### Pattern 1: Sequential Execution (All Tools)
+
+Works with any AI tool, including those without subagent support:
+
+```
+┌─────────────────────────────────────────┐
+│ Load config.yaml                        │
+│ Determine model and context budget      │
+└───────────────┬─────────────────────────┘
+                │
+                ▼
+┌─────────────────────────────────────────┐
+│ For each agent in workflow:             │
+│   1. Load agent prompt file             │
+│   2. Load required input files          │
+│   3. Execute with configured model      │
+│   4. Write output to specified file     │
+│   5. Update STATE.md                    │
+└─────────────────────────────────────────┘
+```
+
+### Pattern 2: Parallel Execution (Tools with Subagent Support)
+
+For Claude Code or tools with parallel capabilities:
+
+```
+┌─────────────────────────────────────────┐
+│ Orchestrator (minimal context)          │
+│ - Loads workflow definition             │
+│ - Identifies parallelizable agents      │
+└───────────────┬─────────────────────────┘
+                │
+    ┌───────────┼───────────┐
+    │           │           │
+    ▼           ▼           ▼
+┌───────┐   ┌───────┐   ┌───────┐
+│Agent 1│   │Agent 2│   │Agent 3│
+│(fresh)│   │(fresh)│   │(fresh)│
+└───┬───┘   └───┬───┘   └───┬───┘
+    │           │           │
+    ▼           ▼           ▼
+ output1.md  output2.md  output3.md
+    │           │           │
+    └───────────┼───────────┘
+                │
+                ▼
+┌─────────────────────────────────────────┐
+│ Orchestrator collects outputs           │
+│ Proceeds to next wave                   │
+└─────────────────────────────────────────┘
+```
+
+### Pattern 3: Hybrid (Adaptive)
+
+Detect tool capabilities and adapt:
+
+```yaml
+# Workflow definition with parallelization hints
+workflow: research
+steps:
+  - wave: 1
+    parallel: true              # Can run in parallel if supported
     agents:
       - stack-researcher
       - feature-researcher
       - pitfall-researcher
 
-  adversarial-review:
-    enabled: true
-    required-for-merge: true
+  - wave: 2
+    parallel: false             # Must be sequential
+    agents:
+      - synthesizer            # Depends on wave 1 outputs
+```
+
+---
+
+## Workflow Definitions
+
+Workflows orchestrate multiple agents:
+
+**`openspec/workflows/research.yaml`**
+
+```yaml
+name: research
+description: Complete domain research before proposal
+
+# Model preference for this workflow (overrides agent defaults)
+model_preference: balanced
+
+waves:
+  - name: investigation
+    parallel: true
+    agents:
+      - stack-researcher
+      - feature-researcher
+      - architecture-researcher
+      - pitfall-researcher
+
+  - name: synthesis
+    parallel: false
+    agents:
+      - synthesizer
+    inputs:
+      # Explicitly pass outputs from wave 1
+      - "openspec/research/investigations/*.md"
+
+outputs:
+  - "openspec/research/SUMMARY.md"
+
+on_complete:
+  - update: "openspec/planning/STATE.md"
+    action: append
+    content: |
+      ### Research Complete
+      - Completed: {date}
+      - See: openspec/research/SUMMARY.md
+```
+
+**`openspec/workflows/review.yaml`**
+
+```yaml
+name: adversarial-review
+description: Red team review of change proposal
+
+parameters:
+  change_id:
+    required: true
+    description: The change ID to review
+
+waves:
+  - name: adversarial
+    parallel: true
     agents:
       - security-adversary
       - scale-adversary
+      - edge-case-adversary
 
-execution:
-  parallel-waves: true
-  atomic-commits: true
-  verification-required: true
+  - name: synthesis
+    parallel: false
+    agents:
+      - review-synthesizer
 
-review:
-  auto-trigger: on-completion
-  block-on-high-severity: true
+outputs:
+  - "openspec/changes/{change_id}/REVIEW.md"
+
+# Gate: block implementation if high severity issues
+gate:
+  condition: "no HIGH severity issues unaddressed"
+  on_fail: "block"
 ```
 
 ---
 
-## CLI Integration
+## Tool Integration
 
-### New Commands
+### OpenCode Integration
 
 ```bash
-# Agent management
-openspec agent list                    # List available agents
-openspec agent run <agent> [inputs]    # Run specific agent
-openspec agent config                  # Edit agent configuration
+# Copy agents to OpenCode commands directory
+cp -r openspec/agents .opencode/commands/openspec-agents
 
-# Skill management
-openspec skill list                    # List available skills
-openspec skill run <skill> [inputs]    # Run specific skill
-openspec skill compose [workflow]      # Run skill workflow
+# Copy workflows
+cp -r openspec/workflows .opencode/workflows
 
-# Orchestration
-openspec orchestrate research [topic]  # Run research orchestration
-openspec orchestrate execute [change]  # Run execution orchestration
-openspec orchestrate review [change]   # Run review orchestration
+# Run a workflow
+/openspec-agents/research/stack-researcher "authentication"
 
-# Parallel execution
-openspec execute --parallel            # Enable wave parallelism
-openspec execute --wave 2              # Run specific wave
-openspec execute --dry-run             # Preview execution plan
+# Or run full workflow
+/workflows/research
 ```
 
-### Slash Command Integration
+OpenCode config (`.opencode/config.yaml`):
+```yaml
+commands:
+  directories:
+    - .opencode/commands
+    - openspec/agents          # Direct access to agents
 
+# Model configuration
+models:
+  default: claude-sonnet
+  aliases:
+    fast: claude-haiku
+    balanced: claude-sonnet
+    powerful: claude-opus
+```
+
+### Codex CLI Integration
+
+```bash
+# Load agent as context
+codex --context @openspec/agents/research/stack-researcher.md \
+      "Research authentication stack options"
+
+# Or use the prompt directly
+codex "$(cat openspec/agents/research/stack-researcher.md)"
+```
+
+### Claude Code Integration
+
+```bash
+# Use as slash command
+/openspec:research stack
+
+# Or reference in conversation
+"Follow the agent prompt in openspec/agents/research/stack-researcher.md"
+```
+
+CLAUDE.md integration:
 ```markdown
-# Claude Code slash commands
+## Custom Commands
 
-/openspec:research [topic]
-  - Spawns parallel research agents
-  - Generates SUMMARY.md with findings
+### /openspec:research [type]
+Execute research agent. Types: stack, features, architecture, pitfalls, all
 
-/openspec:plan [milestone]
-  - Extracts requirements
-  - Creates phased roadmap
-  - Generates PLAN.md files
-
-/openspec:execute [change-id]
-  - Runs tasks in waves
-  - Atomic commits per task
-  - Updates STATE.md
-
-/openspec:review [change-id]
-  - Runs adversarial agents
-  - Generates REVIEW.md
-  - Gates implementation
+### /openspec:review [change-id]
+Run adversarial review on change proposal.
 ```
 
 ---
 
-## Benefits
+## CLI Commands
 
-| Benefit | Description |
-|---------|-------------|
-| **Context Preservation** | Subagent isolation prevents quality degradation |
-| **Parallel Speed** | Wave execution reduces total time |
-| **Specialized Focus** | Each agent optimized for its domain |
-| **Reusable Skills** | Common operations encapsulated |
-| **Systematic Review** | Adversarial agents catch issues early |
-| **Clear Handoffs** | Structured summaries enable coordination |
-| **Configurable** | Adjust agents/skills per project needs |
+The `openspec` CLI manages configuration and workflows:
+
+```bash
+# Configuration
+openspec config show                    # Display current config
+openspec config set defaults.model gpt-4o
+openspec config set agents.research.context_budget 40000
+
+# Agent management
+openspec agent list                     # List available agents
+openspec agent show security-adversary  # View agent details
+openspec agent run stack-researcher     # Run single agent
+openspec agent run stack-researcher --model gpt-4o  # Override model
+
+# Workflow execution
+openspec workflow list                  # List workflows
+openspec workflow run research          # Run research workflow
+openspec workflow run review --change-id add-auth  # With parameters
+
+# Context analysis
+openspec context estimate research      # Estimate context usage
+openspec context check stack-researcher # Verify fits in budget
+```
 
 ---
 
-## Implementation Priority
+## Configuration Examples
 
-1. **Phase 1**: Core agent definitions and context isolation
-2. **Phase 2**: Research agents and orchestration
-3. **Phase 3**: Executor agents with wave parallelism
-4. **Phase 4**: Review agents (adversaries)
-5. **Phase 5**: Skill system and composition
-6. **Phase 6**: CLI commands and slash integration
+### Minimal Setup (Defaults)
+
+```yaml
+# openspec/config.yaml
+version: "1.0"
+defaults:
+  model: "auto"
+```
+
+### Small Model Setup (e.g., Llama 8B)
+
+```yaml
+version: "1.0"
+defaults:
+  model: "llama-3-8b"
+  context_budget: 6000           # Conservative for 8k model
+
+context_strategy:
+  overflow_handling: "summarize"
+  small_context:
+    max_file_size: 2000
+    max_files: 3
+```
+
+### Mixed Model Setup
+
+```yaml
+version: "1.0"
+defaults:
+  context_budget: 100000
+
+agents:
+  research:
+    model_preference: "fast"     # Use cheap model for research
+    context_budget: 30000
+
+  review:
+    model_preference: "powerful" # Use best model for security
+    context_budget: 80000
+
+  execution:
+    model_preference: "balanced"
+    context_budget: "max"
+```
+
+### Enterprise Setup (Multiple Providers)
+
+```yaml
+version: "1.0"
+
+tools:
+  opencode:
+    models:
+      fast: "gpt-4o-mini"        # OpenAI for speed
+      balanced: "claude-sonnet"   # Anthropic for balance
+      powerful: "o1"             # OpenAI for reasoning
+    context_limits:
+      gpt-4o-mini: 128000
+      claude-sonnet: 200000
+      o1: 200000
+
+agents:
+  research:
+    model_preference: "fast"
+  review:
+    model_preference: "powerful"
+  execution:
+    model_preference: "balanced"
+```
+
+---
+
+## Summary
+
+| Feature | Benefit |
+|---------|---------|
+| **File-based agents** | Works with any AI tool |
+| **Configurable models** | Use right model for each task |
+| **Context budgets** | Supports 8k to 1M+ context models |
+| **YAML frontmatter** | Agent config co-located with prompt |
+| **Workflow orchestration** | Coordinate multiple agents |
+| **Progressive enhancement** | Parallel when supported, sequential always works |
 
 ---
 
 ## References
 
-- [GSD Subagent Architecture](https://github.com/glittercowboy/get-shit-done)
-- [OpenSpec Project Planning Proposal](./project-planning-research-proposal.md)
-- [Claude Code Task Tool Documentation](https://docs.anthropic.com/claude-code)
+- [OpenCode](https://opencode.ai/) - Primary target
+- [Codex CLI](https://github.com/openai/codex) - OpenAI's coding agent
+- [Claude Code](https://docs.anthropic.com/claude-code) - Anthropic's CLI
+- [GSD](https://github.com/glittercowboy/get-shit-done) - Context engineering patterns
