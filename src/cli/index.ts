@@ -21,6 +21,7 @@ import { StateCommand } from '../commands/state.js';
 import { PlanCommand } from '../commands/plan.js';
 import { ResearchCommand } from '../commands/research.js';
 import { TasksCommand } from '../commands/tasks.js';
+import { AgentConfigCommand } from '../commands/agent-config.js';
 
 const program = new Command();
 const require = createRequire(import.meta.url);
@@ -690,6 +691,99 @@ tasksCmd
     try {
       const tasksCommand = new TasksCommand();
       await tasksCommand.show(changeId, '.');
+    } catch (error) {
+      console.log();
+      ora().fail(`Error: ${(error as Error).message}`);
+      process.exit(1);
+    }
+  });
+
+// Agent config command for managing model and context settings
+const agentConfigCmd = program
+  .command('agent-config')
+  .description('Manage agent configuration (models, context budgets, strategies)');
+
+agentConfigCmd
+  .command('init')
+  .description('Initialize config.yaml with default settings')
+  .action(async () => {
+    try {
+      const agentConfigCommand = new AgentConfigCommand();
+      await agentConfigCommand.init('.');
+    } catch (error) {
+      console.log();
+      ora().fail(`Error: ${(error as Error).message}`);
+      process.exit(1);
+    }
+  });
+
+agentConfigCmd
+  .command('show')
+  .description('Display current configuration')
+  .action(async () => {
+    try {
+      const agentConfigCommand = new AgentConfigCommand();
+      await agentConfigCommand.show('.');
+    } catch (error) {
+      console.log();
+      ora().fail(`Error: ${(error as Error).message}`);
+      process.exit(1);
+    }
+  });
+
+agentConfigCmd
+  .command('get <key>')
+  .description('Get a configuration value (e.g., "tools.opencode.default_model")')
+  .action(async (key: string) => {
+    try {
+      const agentConfigCommand = new AgentConfigCommand();
+      await agentConfigCommand.get(key, '.');
+    } catch (error) {
+      console.log();
+      ora().fail(`Error: ${(error as Error).message}`);
+      process.exit(1);
+    }
+  });
+
+agentConfigCmd
+  .command('set <key> <value>')
+  .description('Set a configuration value')
+  .action(async (key: string, value: string) => {
+    try {
+      const agentConfigCommand = new AgentConfigCommand();
+      await agentConfigCommand.set(key, value, '.');
+    } catch (error) {
+      console.log();
+      ora().fail(`Error: ${(error as Error).message}`);
+      process.exit(1);
+    }
+  });
+
+agentConfigCmd
+  .command('model <tool> <agent-type>')
+  .description('Show model configuration for a tool and agent type')
+  .action(async (tool: string, agentType: string) => {
+    try {
+      const agentConfigCommand = new AgentConfigCommand();
+      await agentConfigCommand.showModel(
+        tool as 'opencode' | 'codex' | 'claude-code',
+        agentType as 'research' | 'execution' | 'review' | 'planning',
+        '.'
+      );
+    } catch (error) {
+      console.log();
+      ora().fail(`Error: ${(error as Error).message}`);
+      process.exit(1);
+    }
+  });
+
+agentConfigCmd
+  .command('summary')
+  .description('Show a summary of all agent configurations')
+  .action(async () => {
+    try {
+      const agentConfigCommand = new AgentConfigCommand();
+      await agentConfigCommand.summary('.');
     } catch (error) {
       console.log();
       ora().fail(`Error: ${(error as Error).message}`);
