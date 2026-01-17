@@ -376,15 +376,10 @@ const stateCmd = program
 stateCmd
   .command('show')
   .description('Display current project state')
-  .action(async () => {
-    try {
-      const stateCommand = new StateCommand();
-      await stateCommand.show('.');
-    } catch (error) {
-      console.log();
-      ora().fail(`Error: ${(error as Error).message}`);
-      process.exit(1);
-    }
+  .action(() => runCommandAction(async () => {
+    const stateCommand = new StateCommand();
+    await stateCommand.show('.');
+  }));
   });
 
 stateCmd
