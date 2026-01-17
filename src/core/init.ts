@@ -13,7 +13,7 @@ import {
 import chalk from 'chalk';
 import ora from 'ora';
 import { FileSystemUtils } from '../utils/file-system.js';
-import { TemplateManager, ProjectContext } from './templates/index.js';
+import { TemplateManager, ProjectContext, PlanningContext } from './templates/index.js';
 import { ToolRegistry } from './configurators/registry.js';
 import { SlashCommandRegistry } from './configurators/slash/registry.js';
 import {
@@ -711,6 +711,10 @@ export class InitCommand {
       path.join(openspecPath, 'specs'),
       path.join(openspecPath, 'changes'),
       path.join(openspecPath, 'changes', 'archive'),
+      path.join(openspecPath, 'planning'),
+      path.join(openspecPath, 'planning', 'milestones'),
+      path.join(openspecPath, 'research'),
+      path.join(openspecPath, 'research', 'investigations'),
     ];
 
     for (const dir of directories) {
@@ -741,7 +745,14 @@ export class InitCommand {
       // Could be enhanced with prompts for project details
     };
 
-    const templates = TemplateManager.getTemplates(context);
+    const planningContext: PlanningContext = {
+      currentDate: new Date().toISOString().split('T')[0],
+    };
+
+    const templates = [
+      ...TemplateManager.getTemplates(context),
+      ...TemplateManager.getPlanningTemplates(planningContext),
+    ];
 
     for (const template of templates) {
       const filePath = path.join(openspecPath, template.path);

@@ -17,6 +17,8 @@ import { registerConfigCommand } from '../commands/config.js';
 import { registerArtifactWorkflowCommands } from '../commands/artifact-workflow.js';
 import { registerModuleCommand } from '../commands/module.js';
 import { maybeShowTelemetryNotice, trackCommand, shutdown } from '../telemetry/index.js';
+import { StateCommand } from '../commands/state.js';
+import { PlanCommand } from '../commands/plan.js';
 
 const program = new Command();
 const require = createRequire(import.meta.url);
@@ -362,5 +364,156 @@ program
 
 // Register artifact workflow commands (experimental)
 registerArtifactWorkflowCommands(program);
+
+// State command for project state management
+const stateCmd = program
+  .command('state')
+  .description('Manage project state (decisions, blockers, notes)');
+
+stateCmd
+  .command('show')
+  .description('Display current project state')
+  .action(async () => {
+    try {
+      const stateCommand = new StateCommand();
+      await stateCommand.show('.');
+    } catch (error) {
+      console.log();
+      ora().fail(`Error: ${(error as Error).message}`);
+      process.exit(1);
+    }
+  });
+
+stateCmd
+  .command('decision <text>')
+  .description('Record a decision')
+  .action(async (text: string) => {
+    try {
+      const stateCommand = new StateCommand();
+      await stateCommand.addDecision(text, '.');
+    } catch (error) {
+      console.log();
+      ora().fail(`Error: ${(error as Error).message}`);
+      process.exit(1);
+    }
+  });
+
+stateCmd
+  .command('blocker <text>')
+  .description('Record a blocker')
+  .action(async (text: string) => {
+    try {
+      const stateCommand = new StateCommand();
+      await stateCommand.addBlocker(text, '.');
+    } catch (error) {
+      console.log();
+      ora().fail(`Error: ${(error as Error).message}`);
+      process.exit(1);
+    }
+  });
+
+stateCmd
+  .command('note <text>')
+  .description('Add a session note')
+  .action(async (text: string) => {
+    try {
+      const stateCommand = new StateCommand();
+      await stateCommand.addNote(text, '.');
+    } catch (error) {
+      console.log();
+      ora().fail(`Error: ${(error as Error).message}`);
+      process.exit(1);
+    }
+  });
+
+stateCmd
+  .command('focus <text>')
+  .description('Set current focus')
+  .action(async (text: string) => {
+    try {
+      const stateCommand = new StateCommand();
+      await stateCommand.setFocus(text, '.');
+    } catch (error) {
+      console.log();
+      ora().fail(`Error: ${(error as Error).message}`);
+      process.exit(1);
+    }
+  });
+
+stateCmd
+  .command('question <text>')
+  .description('Add an open question')
+  .action(async (text: string) => {
+    try {
+      const stateCommand = new StateCommand();
+      await stateCommand.addQuestion(text, '.');
+    } catch (error) {
+      console.log();
+      ora().fail(`Error: ${(error as Error).message}`);
+      process.exit(1);
+    }
+  });
+
+// Plan command for roadmap and milestone management
+const planCmd = program
+  .command('plan')
+  .description('Manage project planning (milestones, phases, roadmap)');
+
+planCmd
+  .command('init')
+  .description('Initialize planning structure')
+  .action(async () => {
+    try {
+      const planCommand = new PlanCommand();
+      await planCommand.init('.');
+    } catch (error) {
+      console.log();
+      ora().fail(`Error: ${(error as Error).message}`);
+      process.exit(1);
+    }
+  });
+
+planCmd
+  .command('status')
+  .description('Show roadmap progress')
+  .action(async () => {
+    try {
+      const planCommand = new PlanCommand();
+      await planCommand.status('.');
+    } catch (error) {
+      console.log();
+      ora().fail(`Error: ${(error as Error).message}`);
+      process.exit(1);
+    }
+  });
+
+planCmd
+  .command('milestone <name>')
+  .description('Add a new milestone')
+  .option('-t, --target <target>', 'Milestone target/goal')
+  .action(async (name: string, options?: { target?: string }) => {
+    try {
+      const planCommand = new PlanCommand();
+      await planCommand.addMilestone(name, options?.target, '.');
+    } catch (error) {
+      console.log();
+      ora().fail(`Error: ${(error as Error).message}`);
+      process.exit(1);
+    }
+  });
+
+planCmd
+  .command('phase <milestone> <name>')
+  .description('Add a phase to a milestone')
+  .action(async (milestone: string, name: string) => {
+    try {
+      const planCommand = new PlanCommand();
+      await planCommand.addPhase(milestone, name, '.');
+    } catch (error) {
+      console.log();
+      ora().fail(`Error: ${(error as Error).message}`);
+      process.exit(1);
+    }
+  });
 
 program.parse();
