@@ -22,6 +22,7 @@ import { PlanCommand } from '../commands/plan.js';
 import { ResearchCommand } from '../commands/research.js';
 import { TasksCommand } from '../commands/tasks.js';
 import { AgentConfigCommand } from '../commands/agent-config.js';
+import { WorkflowCommand } from '../commands/workflow.js';
 
 const program = new Command();
 const require = createRequire(import.meta.url);
@@ -784,6 +785,134 @@ agentConfigCmd
     try {
       const agentConfigCommand = new AgentConfigCommand();
       await agentConfigCommand.summary('.');
+    } catch (error) {
+      console.log();
+      ora().fail(`Error: ${(error as Error).message}`);
+      process.exit(1);
+    }
+  });
+
+// Workflow command for orchestrating multi-agent workflows
+const workflowCmd = program
+  .command('workflow')
+  .description('Orchestrate multi-agent workflows');
+
+workflowCmd
+  .command('init')
+  .description('Initialize workflows directory with examples')
+  .action(async () => {
+    try {
+      const workflowCommand = new WorkflowCommand();
+      await workflowCommand.init('.');
+    } catch (error) {
+      console.log();
+      ora().fail(`Error: ${(error as Error).message}`);
+      process.exit(1);
+    }
+  });
+
+workflowCmd
+  .command('list')
+  .description('List available workflows')
+  .action(async () => {
+    try {
+      const workflowCommand = new WorkflowCommand();
+      await workflowCommand.list('.');
+    } catch (error) {
+      console.log();
+      ora().fail(`Error: ${(error as Error).message}`);
+      process.exit(1);
+    }
+  });
+
+workflowCmd
+  .command('show <name>')
+  .description('Show workflow details')
+  .action(async (name: string) => {
+    try {
+      const workflowCommand = new WorkflowCommand();
+      await workflowCommand.show(name, '.');
+    } catch (error) {
+      console.log();
+      ora().fail(`Error: ${(error as Error).message}`);
+      process.exit(1);
+    }
+  });
+
+workflowCmd
+  .command('run <name>')
+  .description('Generate execution instructions for a workflow')
+  .option('-t, --tool <tool>', 'Target tool (opencode, claude-code, codex)', 'opencode')
+  .option('-v, --var <vars...>', 'Variables in key=value format')
+  .action(async (name: string, options: { tool?: string; var?: string[] }) => {
+    try {
+      const workflowCommand = new WorkflowCommand();
+      const tool = (options.tool || 'opencode') as 'opencode' | 'claude-code' | 'codex';
+
+      // Parse variables
+      const variables: Record<string, string> = {};
+      if (options.var) {
+        for (const v of options.var) {
+          const [key, ...rest] = v.split('=');
+          variables[key] = rest.join('=');
+        }
+      }
+
+      await workflowCommand.run(name, tool, '.', variables);
+    } catch (error) {
+      console.log();
+      ora().fail(`Error: ${(error as Error).message}`);
+      process.exit(1);
+    }
+  });
+
+workflowCmd
+  .command('plan <name>')
+  .description('Generate execution plan (JSON)')
+  .option('-t, --tool <tool>', 'Target tool (opencode, claude-code, codex)', 'opencode')
+  .option('-v, --var <vars...>', 'Variables in key=value format')
+  .action(async (name: string, options: { tool?: string; var?: string[] }) => {
+    try {
+      const workflowCommand = new WorkflowCommand();
+      const tool = (options.tool || 'opencode') as 'opencode' | 'claude-code' | 'codex';
+
+      const variables: Record<string, string> = {};
+      if (options.var) {
+        for (const v of options.var) {
+          const [key, ...rest] = v.split('=');
+          variables[key] = rest.join('=');
+        }
+      }
+
+      await workflowCommand.plan(name, tool, '.', variables);
+    } catch (error) {
+      console.log();
+      ora().fail(`Error: ${(error as Error).message}`);
+      process.exit(1);
+    }
+  });
+
+workflowCmd
+  .command('status <name>')
+  .description('Check workflow execution status')
+  .action(async (name: string) => {
+    try {
+      const workflowCommand = new WorkflowCommand();
+      await workflowCommand.status(name, '.');
+    } catch (error) {
+      console.log();
+      ora().fail(`Error: ${(error as Error).message}`);
+      process.exit(1);
+    }
+  });
+
+workflowCmd
+  .command('prompts')
+  .description('Generate prompt template files')
+  .action(async () => {
+    try {
+      const workflowCommand = new WorkflowCommand();
+      await workflowCommand.generatePrompts('.');
     } catch (error) {
       console.log();
       ora().fail(`Error: ${(error as Error).message}`);

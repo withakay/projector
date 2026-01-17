@@ -715,6 +715,9 @@ export class InitCommand {
       path.join(openspecPath, 'planning', 'milestones'),
       path.join(openspecPath, 'research'),
       path.join(openspecPath, 'research', 'investigations'),
+      path.join(openspecPath, 'workflows'),
+      path.join(openspecPath, 'workflows', '.state'),
+      path.join(openspecPath, 'commands'),
     ];
 
     for (const dir of directories) {
