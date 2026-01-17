@@ -132,7 +132,10 @@ export class WorkflowParser {
       throw new Error(`Invalid task at wave '${waveId}' index ${index}: ${sourcePath}`);
     }
 
-    const taskId = raw.id || `${waveId}-task-${index + 1}`;
+    if (!raw.id || typeof raw.id !== 'string') {
+      throw new Error(`Task at wave '${waveId}' index ${index} is missing a required 'id' field: ${sourcePath}`);
+    }
+    const taskId = raw.id;
 
     if (!raw.agent || !VALID_AGENT_TYPES.includes(raw.agent)) {
       throw new Error(
