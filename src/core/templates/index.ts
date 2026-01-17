@@ -19,6 +19,12 @@ import {
   pitfallsTemplate,
   ResearchContext,
 } from './research-templates.js';
+import {
+  commandPrompts,
+  commandPromptDescriptions,
+  CommandContext,
+  CommandPromptId,
+} from './command-templates.js';
 
 export interface Template<T = any> {
   path: string;
@@ -114,12 +120,31 @@ export class TemplateManager {
     };
     return templates[type](context);
   }
+
+  static getCommandTemplates(context: CommandContext = {}): Template<CommandContext>[] {
+    return (Object.keys(commandPrompts) as CommandPromptId[]).map((id) => ({
+      path: `commands/${id}.md`,
+      content: commandPrompts[id](context),
+    }));
+  }
+
+  static getCommandPrompt(id: CommandPromptId, context: CommandContext = {}): string {
+    return commandPrompts[id](context);
+  }
+
+  static getCommandPromptDescription(id: CommandPromptId): string {
+    return commandPromptDescriptions[id];
+  }
+
+  static getCommandPromptIds(): CommandPromptId[] {
+    return Object.keys(commandPrompts) as CommandPromptId[];
+  }
 }
 
 export { ProjectContext } from './project-template.js';
 export { PlanningContext } from './planning-templates.js';
 export { ResearchContext } from './research-templates.js';
-export type { SlashCommandId } from './slash-command-templates.js';
+export type { SlashCommandId, CoreSlashCommandId } from './slash-command-templates.js';
 export {
   enhancedTasksTemplate,
   taskItemTemplate,
@@ -129,3 +154,4 @@ export {
   type ParsedTask,
   type ParsedTasksFile,
 } from './tasks-template.js';
+export { CommandContext, CommandPromptId } from './command-templates.js';

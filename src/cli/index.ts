@@ -19,7 +19,6 @@ import { registerModuleCommand } from '../commands/module.js';
 import { maybeShowTelemetryNotice, trackCommand, shutdown } from '../telemetry/index.js';
 import { StateCommand } from '../commands/state.js';
 import { PlanCommand } from '../commands/plan.js';
-import { ResearchCommand } from '../commands/research.js';
 import { TasksCommand } from '../commands/tasks.js';
 import { AgentConfigCommand } from '../commands/agent-config.js';
 import { WorkflowCommand } from '../commands/workflow.js';
@@ -520,81 +519,6 @@ planCmd
     }
   });
 
-// Research command for domain investigation
-const researchCmd = program
-  .command('research')
-  .description('Manage domain research (stack, features, architecture, pitfalls)');
-
-researchCmd
-  .command('init [topic]')
-  .description('Initialize research structure with templates')
-  .action(async (topic?: string) => {
-    try {
-      const researchCommand = new ResearchCommand();
-      await researchCommand.init(topic || '', '.');
-    } catch (error) {
-      console.log();
-      ora().fail(`Error: ${(error as Error).message}`);
-      process.exit(1);
-    }
-  });
-
-researchCmd
-  .command('status')
-  .description('Show research progress')
-  .action(async () => {
-    try {
-      const researchCommand = new ResearchCommand();
-      await researchCommand.status('.');
-    } catch (error) {
-      console.log();
-      ora().fail(`Error: ${(error as Error).message}`);
-      process.exit(1);
-    }
-  });
-
-researchCmd
-  .command('create <type> [topic]')
-  .description('Create a research template (stack, features, architecture, pitfalls, summary, all)')
-  .action(async (type: string, topic?: string) => {
-    try {
-      const researchCommand = new ResearchCommand();
-      await researchCommand.create(type as any, topic || '', '.');
-    } catch (error) {
-      console.log();
-      ora().fail(`Error: ${(error as Error).message}`);
-      process.exit(1);
-    }
-  });
-
-researchCmd
-  .command('show <type>')
-  .description('Display a research document (stack, features, architecture, pitfalls, summary)')
-  .action(async (type: string) => {
-    try {
-      const researchCommand = new ResearchCommand();
-      await researchCommand.show(type as any, '.');
-    } catch (error) {
-      console.log();
-      ora().fail(`Error: ${(error as Error).message}`);
-      process.exit(1);
-    }
-  });
-
-researchCmd
-  .command('synthesize')
-  .description('Generate SUMMARY.md from completed investigations')
-  .action(async () => {
-    try {
-      const researchCommand = new ResearchCommand();
-      await researchCommand.synthesize('.');
-    } catch (error) {
-      console.log();
-      ora().fail(`Error: ${(error as Error).message}`);
-      process.exit(1);
-    }
-  });
-
 // Tasks command for enhanced task management
 const tasksCmd = program
   .command('tasks')
@@ -899,20 +823,6 @@ workflowCmd
     try {
       const workflowCommand = new WorkflowCommand();
       await workflowCommand.status(name, '.');
-    } catch (error) {
-      console.log();
-      ora().fail(`Error: ${(error as Error).message}`);
-      process.exit(1);
-    }
-  });
-
-workflowCmd
-  .command('prompts')
-  .description('Generate prompt template files')
-  .action(async () => {
-    try {
-      const workflowCommand = new WorkflowCommand();
-      await workflowCommand.generatePrompts('.');
     } catch (error) {
       console.log();
       ora().fail(`Error: ${(error as Error).message}`);

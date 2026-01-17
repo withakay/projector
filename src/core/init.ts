@@ -757,10 +757,10 @@ export class InitCommand {
       ...TemplateManager.getPlanningTemplates(planningContext),
     ];
 
+    // Write standard templates
     for (const template of templates) {
       const filePath = path.join(openspecPath, template.path);
 
-      // Skip if file exists and we're in skipExisting mode
       if (skipExisting && (await FileSystemUtils.fileExists(filePath))) {
         continue;
       }
@@ -768,6 +768,23 @@ export class InitCommand {
       const content =
         typeof template.content === 'function'
           ? template.content(context)
+          : template.content;
+
+      await FileSystemUtils.writeFile(filePath, content);
+    }
+
+    // Write command templates (separate context type)
+    const commandTemplates = TemplateManager.getCommandTemplates({});
+    for (const template of commandTemplates) {
+      const filePath = path.join(openspecPath, template.path);
+
+      if (skipExisting && (await FileSystemUtils.fileExists(filePath))) {
+        continue;
+      }
+
+      const content =
+        typeof template.content === 'function'
+          ? template.content({})
           : template.content;
 
       await FileSystemUtils.writeFile(filePath, content);
