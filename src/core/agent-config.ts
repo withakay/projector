@@ -269,9 +269,8 @@ export class AgentConfigManager {
       current = current[key];
     }
 
-    // Parse value if it looks like a number
-    const parsedValue = !isNaN(Number(value)) ? Number(value) : value;
-    current[keys[keys.length - 1]] = parsedValue;
+    // The value from the CLI is a string. Avoid automatic type coercion.
+    current[keys[keys.length - 1]] = value;
   }
 
   static getDefaultConfig(): AgentConfig {
