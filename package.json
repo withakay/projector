@@ -1,5 +1,5 @@
 {
-  "name": "@fission-ai/projector",
+  "name": "@withakay/projector",
   "version": "0.19.0",
   "description": "AI-native system for spec-driven development",
   "keywords": [
@@ -9,10 +9,10 @@
     "ai",
     "development"
   ],
-  "homepage": "https://github.com/Fission-AI/Projector",
+  "homepage": "https://github.com/withakay/Projector",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Fission-AI/Projector"
+    "url": "https://github.com/withakay/Projector"
   },
   "license": "MIT",
   "author": "Projector Contributors",
@@ -76,7 +76,6 @@
     "commander": "^14.0.0",
     "fast-glob": "^3.3.3",
     "ora": "^8.2.0",
-    "posthog-node": "^5.20.0",
     "yaml": "^2.8.2",
     "zod": "^4.0.17"
   }
