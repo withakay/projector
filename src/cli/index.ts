@@ -16,7 +16,6 @@ import { CompletionCommand } from '../commands/completion.js';
 import { registerConfigCommand } from '../commands/config.js';
 import { registerArtifactWorkflowCommands } from '../commands/artifact-workflow.js';
 import { registerModuleCommand } from '../commands/module.js';
-import { maybeShowTelemetryNotice, trackCommand, shutdown } from '../telemetry/index.js';
 import { StateCommand } from '../commands/state.js';
 import { PlanCommand } from '../commands/plan.js';
 import { TasksCommand } from '../commands/tasks.js';
@@ -55,27 +54,15 @@ program
 // Global options
 program.option('--no-color', 'Disable color output');
 
-// Apply global flags and telemetry before any command runs
+// Apply global flags before any command runs
 // Note: preAction receives (thisCommand, actionCommand) where:
-// - thisCommand: the command where hook was added (root program)
-// - actionCommand: the command actually being executed (subcommand)
-program.hook('preAction', async (thisCommand, actionCommand) => {
+// - thisCommand: command where hook was added (root program)
+// - actionCommand: command actually being executed (subcommand)
+program.hook('preAction', async (thisCommand) => {
   const opts = thisCommand.opts();
   if (opts.color === false) {
     process.env.NO_COLOR = '1';
   }
-
-  // Show first-run telemetry notice (if not seen)
-  await maybeShowTelemetryNotice();
-
-  // Track command execution (use actionCommand to get the actual subcommand)
-  const commandPath = getCommandPath(actionCommand);
-  await trackCommand(commandPath, version);
-});
-
-// Shutdown telemetry after command completes
-program.hook('postAction', async () => {
-  await shutdown();
 });
 
 const availableToolIds = AI_TOOLS.filter((tool) => tool.available).map((tool) => tool.value);

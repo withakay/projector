@@ -694,7 +694,7 @@ async function templatesCommand(options: TemplatesOptions): Promise<void> {
     const schemaDir = getSchemaDir(schemaName)!;
 
     // Determine if this is a user override or package built-in
-    const { getUserSchemasDir } = await import('../core/artifact-graph/resolver.js');
+    const { getUserSchemasDir } = await import('../core/global-config.js');
     const userSchemasDir = getUserSchemasDir();
     const isUserOverride = schemaDir.startsWith(userSchemasDir);
 
@@ -913,7 +913,7 @@ ${template.content}
     console.log('  • /opsx:archive - Archive a completed change');
     console.log();
     console.log(chalk.yellow('💡 This is an experimental feature.'));
-    console.log('   Feedback welcome at: https://github.com/Fission-AI/Projector/issues');
+    console.log('   Feedback welcome at: https://github.com/withakay/Projector/issues');
     console.log();
   } catch (error) {
     spinner.fail('Failed to setup experimental artifact workflow');

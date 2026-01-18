@@ -6,8 +6,12 @@ import { Validator } from '../core/validation/validator.js';
 import type { Spec } from '../core/schemas/index.js';
 import { isInteractive } from '../utils/interactive.js';
 import { getSpecIds } from '../utils/item-discovery.js';
+import { getProjectorDirName } from '../core/project-config.js';
 
-const SPECS_DIR = 'projector/specs';
+function getSpecsDir(projectRoot: string = process.cwd()): string {
+  const projectorDir = getProjectorDirName(projectRoot);
+  return join(projectRoot, projectorDir, 'specs');
+}
 
 interface ShowOptions {
   json?: boolean;
@@ -65,7 +69,9 @@ function printSpecTextRaw(specPath: string): void {
 }
 
 export class SpecCommand {
-  private SPECS_DIR = 'projector/specs';
+  private getSpecsDir(): string {
+    return getSpecsDir();
+  }
 
   async show(specId?: string, options: ShowOptions = {}): Promise<void> {
     if (!specId) {
@@ -82,9 +88,13 @@ export class SpecCommand {
       }
     }
 
-    const specPath = join(this.SPECS_DIR, specId, 'spec.md');
+    const specsDir = this.getSpecsDir();
+    const specPath = join(specsDir, specId, 'spec.md');
     if (!existsSync(specPath)) {
-      throw new Error(`Spec '${specId}' not found at projector/specs/${specId}/spec.md`);
+      const projectorDir = getProjectorDirName(process.cwd());
+      throw new Error(
+        `Spec '${specId}' not found at ${projectorDir}/specs/${specId}/spec.md`
+      );
     }
 
     if (options.json) {
@@ -143,15 +153,16 @@ export function registerSpecCommand(rootProgram: typeof program) {
     .option('--long', 'Show id and title with counts')
     .action((options: { json?: boolean; long?: boolean }) => {
       try {
-        if (!existsSync(SPECS_DIR)) {
+        const specsDir = getSpecsDir();
+        if (!existsSync(specsDir)) {
           console.log('No items found');
           return;
         }
 
-        const specs = readdirSync(SPECS_DIR, { withFileTypes: true })
+        const specs = readdirSync(specsDir, { withFileTypes: true })
           .filter(dirent => dirent.isDirectory())
           .map(dirent => {
-            const specPath = join(SPECS_DIR, dirent.name, 'spec.md');
+            const specPath = join(specsDir, dirent.name, 'spec.md');
             if (existsSync(specPath)) {
               try {
                 const spec = parseSpecFromFile(specPath, dirent.name);
@@ -217,10 +228,14 @@ export function registerSpecCommand(rootProgram: typeof program) {
           }
         }
 
-        const specPath = join(SPECS_DIR, specId, 'spec.md');
-        
+        const specsDir = getSpecsDir();
+        const specPath = join(specsDir, specId, 'spec.md');
+
         if (!existsSync(specPath)) {
-          throw new Error(`Spec '${specId}' not found at projector/specs/${specId}/spec.md`);
+          const projectorDir = getProjectorDirName(process.cwd());
+          throw new Error(
+            `Spec '${specId}' not found at ${projectorDir}/specs/${specId}/spec.md`
+          );
         }
 
         const validator = new Validator(options.strict);

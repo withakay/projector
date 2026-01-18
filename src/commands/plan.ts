@@ -65,9 +65,9 @@ export class PlanCommand {
 
     ora().succeed(chalk.green('Planning structure initialized'));
     console.log(chalk.gray('Created:'));
-    console.log(chalk.gray('  - projector/planning/PROJECT.md'));
-    console.log(chalk.gray('  - projector/planning/ROADMAP.md'));
-    console.log(chalk.gray('  - projector/planning/STATE.md'));
+    console.log(chalk.gray('  - .projector/planning/PROJECT.md'));
+    console.log(chalk.gray('  - .projector/planning/ROADMAP.md'));
+    console.log(chalk.gray('  - .projector/planning/STATE.md'));
   }
 
   async status(projectPath: string = '.'): Promise<void> {

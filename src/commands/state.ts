@@ -13,7 +13,7 @@ export class StateCommand {
   private async ensureStateFile(statePath: string): Promise<void> {
     if (!(await FileSystemUtils.fileExists(statePath))) {
       throw new Error(
-        'STATE.md not found. Run "projector init" first or create projector/planning/STATE.md'
+        'STATE.md not found. Run "projector init" first or create .projector/planning/STATE.md'
       );
     }
   }
