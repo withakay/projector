@@ -141,12 +141,12 @@ const DEFAULT_CONFIG: AgentConfig = {
   context_strategy: {
     overflow_handling: 'summarize',
     always_include: [
-      'projector/planning/STATE.md',
-      'projector/planning/PROJECT.md',
+      '.projector/planning/STATE.md',
+      '.projector/planning/PROJECT.md',
     ],
     priority_files: [
-      'projector/planning/ROADMAP.md',
-      'projector/research/SUMMARY.md',
+      '.projector/planning/ROADMAP.md',
+      '.projector/research/SUMMARY.md',
     ],
   },
 };

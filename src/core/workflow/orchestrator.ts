@@ -250,12 +250,12 @@ export class WorkflowOrchestrator {
     lines.push('## Completion');
     lines.push('');
     lines.push('After all waves complete:');
-    if (plan.workflow.on_complete?.update_state) {
-      lines.push('- Update `projector/planning/STATE.md` with session notes');
-    }
-    if (plan.workflow.on_complete?.update_roadmap) {
-      lines.push('- Update `projector/planning/ROADMAP.md` progress');
-    }
+      if (plan.workflow.on_complete?.update_state) {
+        lines.push('- Update `.projector/planning/STATE.md` with session notes');
+      }
+      if (plan.workflow.on_complete?.update_roadmap) {
+        lines.push('- Update `.projector/planning/ROADMAP.md` progress');
+      }
 
     return lines.join('\n');
   }

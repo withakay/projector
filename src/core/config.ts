@@ -1,4 +1,4 @@
-export const PROJECTOR_DIR_NAME = 'projector';
+export const PROJECTOR_DIR_NAME = '.projector';
 
 export const PROJECTOR_MARKERS = {
   start: '<!-- PROJECTOR:START -->',

@@ -24,7 +24,6 @@ export {
   listSchemasWithInfo,
   getSchemaDir,
   getPackageSchemasDir,
-  getUserSchemasDir,
   SchemaLoadError,
   type SchemaInfo,
 } from './resolver.js';

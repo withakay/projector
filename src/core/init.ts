@@ -920,7 +920,7 @@ export class InitCommand {
     console.log(PALETTE.white('1. Populate your project context:'));
     console.log(
       PALETTE.lightGray(
-        '   "Please read projector/project.md and help me fill it out'
+        '   "Please read .projector/project.md and help me fill it out'
       )
     );
     console.log(
@@ -940,7 +940,7 @@ export class InitCommand {
     console.log(PALETTE.white('3. Learn the Projector workflow:'));
     console.log(
       PALETTE.lightGray(
-        '   "Please explain the Projector workflow from projector/AGENTS.md'
+        '   "Please explain the Projector workflow from .projector/AGENTS.md'
       )
     );
     console.log(

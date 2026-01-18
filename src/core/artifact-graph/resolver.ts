@@ -1,7 +1,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { getGlobalDataDir } from '../global-config.js';
+import { getGlobalDataDir, getUserSchemasDir } from '../global-config.js';
 import { parseSchema, SchemaValidationError } from './schema.js';
 import type { SchemaYaml } from './types.js';
 
@@ -27,13 +27,6 @@ export function getPackageSchemasDir(): string {
   const currentFile = fileURLToPath(import.meta.url);
   // Navigate from dist/core/artifact-graph/ to package root's schemas/
   return path.join(path.dirname(currentFile), '..', '..', '..', 'schemas');
-}
-
-/**
- * Gets the user's schema override directory path.
- */
-export function getUserSchemasDir(): string {
-  return path.join(getGlobalDataDir(), 'schemas');
 }
 
 /**

@@ -19,7 +19,7 @@ export class UpdateCommand {
     // 2. Update AGENTS.md (full replacement)
     const agentsPath = path.join(projectorPath, 'AGENTS.md');
 
-    await FileSystemUtils.writeFile(agentsPath, agentsTemplate);
+    await FileSystemUtils.writeFile(agentsPath, agentsTemplate({ projectorDir: projectorDirName }));
 
     // 3. Update existing AI tool configuration files only
     const configurators = ToolRegistry.getAll();

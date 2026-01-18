@@ -1,4 +1,8 @@
-export const agentsTemplate = `# Projector Instructions
+export interface AgentsTemplateContext {
+  projectorDir: string;
+}
+
+export const agentsTemplate = (context: AgentsTemplateContext) => `# Projector Instructions
 
 Instructions for AI coding assistants using Projector for spec-driven development.
 
@@ -42,8 +46,8 @@ Skip proposal for:
 - Tests for existing behavior
 
 **Workflow**
-1. Review \`projector/project.md\`, \`projector list\`, and \`projector list --specs\` to understand current context.
-2. Choose a unique verb-led \`change-id\` and scaffold \`proposal.md\`, \`tasks.md\`, optional \`design.md\`, and spec deltas under \`projector/changes/<id>/\`.
+1. Review \`${context.projectorDir}/project.md\`, \`projector list\`, and \`projector list --specs\` to understand current context.
+2. Choose a unique verb-led \`change-id\` and scaffold \`proposal.md\`, \`tasks.md\`, optional \`design.md\`, and spec deltas under \`${context.projectorDir}/changes/<id>/\`.
 3. Draft spec deltas using \`## ADDED|MODIFIED|REMOVED Requirements\` with at least one \`#### Scenario:\` per requirement.
 4. Run \`projector validate <id> --strict\` and resolve any issues before sharing the proposal.
 
@@ -69,7 +73,7 @@ After deployment, create separate PR to:
 **Context Checklist:**
 - [ ] Read relevant specs in \`specs/[capability]/spec.md\`
 - [ ] Check pending changes in \`changes/\` for conflicts
-- [ ] Read \`projector/project.md\` for conventions
+- [ ] Read \`${context.projectorDir}/project.md\` for conventions
 - [ ] Run \`projector list\` to see active changes
 - [ ] Run \`projector list --specs\` to see existing capabilities
 
@@ -85,7 +89,7 @@ After deployment, create separate PR to:
 - Show details:
   - Spec: \`projector show <spec-id> --type spec\` (use \`--json\` for filters)
   - Change: \`projector show <change-id> --json --deltas-only\`
-- Full-text search (use ripgrep): \`rg -n "Requirement:|Scenario:" projector/specs\`
+- Full-text search (use ripgrep): \`rg -n "Requirement:|Scenario:" ${context.projectorDir}/specs\`
 
 ## Quick Start
 
@@ -131,7 +135,7 @@ projector validate --modules    # Validate all modules
 ## Directory Structure
 
 \`\`\`
-projector/
+.projector/
 ├── project.md              # Project conventions
 ├── specs/                  # Current truth - what IS built
 │   └── [capability]/       # Single focused capability
@@ -268,7 +272,7 @@ Modules group related changes into epics. Use modules for large features that sp
 
 \`\`\`bash
 projector module new project-setup
-# Creates: projector/modules/001_project-setup/module.md
+# Creates: .projector/modules/001_project-setup/module.md
 \`\`\`
 
 ### module.md Structure
@@ -305,7 +309,7 @@ Set up the initial project structure and tooling.
 \`\`\`bash
 # Change naming: NNN-CC_name
 # NNN = module ID, CC = change number
-mkdir -p projector/changes/001-01_init-repo/{specs/project-config}
+mkdir -p .projector/changes/001-01_init-repo/{specs/project-config}
 \`\`\`
 
 ### Module Validation
@@ -356,7 +360,7 @@ Headers matched with \`trim(header)\` - whitespace ignored.
 Common pitfall: Using MODIFIED to add a new concern without including the previous text. This causes loss of detail at archive time. If you aren’t explicitly changing the existing requirement, add a new requirement under ADDED instead.
 
 Authoring a MODIFIED requirement correctly:
-1) Locate the existing requirement in \`projector/specs/<capability>/spec.md\`.
+1) Locate the existing requirement in \`.projector/specs/<capability>/spec.md\`.
 2) Copy the entire requirement block (from \`### Requirement: ...\` through its scenarios).
 3) Paste it under \`## MODIFIED Requirements\` and edit to reflect the new behavior.
 4) Ensure the header text matches exactly (whitespace-insensitive) and keep at least one \`#### Scenario:\`.
@@ -404,17 +408,17 @@ projector show [spec] --json -r 1
 projector spec list --long
 projector list
 # Optional full-text search:
-# rg -n "Requirement:|Scenario:" projector/specs
-# rg -n "^#|Requirement:" projector/changes
+# rg -n "Requirement:|Scenario:" .projector/specs
+# rg -n "^#|Requirement:" .projector/changes
 
 # 2) Choose change id and scaffold
 CHANGE=add-two-factor-auth
-mkdir -p projector/changes/$CHANGE/{specs/auth}
-printf "## Why\\n...\\n\\n## What Changes\\n- ...\\n\\n## Impact\\n- ...\\n" > projector/changes/$CHANGE/proposal.md
-printf "## 1. Implementation\\n- [ ] 1.1 ...\\n" > projector/changes/$CHANGE/tasks.md
+mkdir -p .projector/changes/$CHANGE/{specs/auth}
+printf "## Why\\n...\\n\\n## What Changes\\n- ...\\n\\n## Impact\\n- ...\\n" > .projector/changes/$CHANGE/proposal.md
+printf "## 1. Implementation\\n- [ ] 1.1 ...\\n" > .projector/changes/$CHANGE/tasks.md
 
 # 3) Add deltas (example)
-cat > projector/changes/$CHANGE/specs/auth/spec.md << 'EOF'
+cat > .projector/changes/$CHANGE/specs/auth/spec.md << 'EOF'
 ## ADDED Requirements
 ### Requirement: Two-Factor Authentication
 Users MUST provide a second factor during login.
@@ -431,7 +435,7 @@ projector validate $CHANGE --strict
 ## Multi-Capability Example
 
 \`\`\`
-projector/changes/add-2fa-notify/
+.projector/changes/add-2fa-notify/
 ├── proposal.md
 ├── tasks.md
 └── specs/

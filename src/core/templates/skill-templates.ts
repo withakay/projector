@@ -114,9 +114,9 @@ Think freely. When insights crystallize, you might offer:
 If the user mentions a change or you detect one is relevant:
 
 1. **Read existing artifacts for context**
-   - \`projector/changes/<name>/proposal.md\`
-   - \`projector/changes/<name>/design.md\`
-   - \`projector/changes/<name>/tasks.md\`
+   - \`.projector/changes/<name>/proposal.md\`
+   - \`.projector/changes/<name>/design.md\`
+   - \`.projector/changes/<name>/tasks.md\`
    - etc.
 
 2. **Reference them naturally in conversation**
@@ -339,7 +339,7 @@ export function getNewChangeSkillTemplate(): SkillTemplate {
    projector new change "<name>"
    \`\`\`
    Add \`--schema <name>\` only if the user requested a specific workflow.
-   This creates a scaffolded change at \`projector/changes/<name>/\` with the selected schema.
+   This creates a scaffolded change at \`.projector/changes/<name>/\` with the selected schema.
 
 4. **Show the artifact status**
    \`\`\`bash
@@ -674,7 +674,7 @@ export function getFfChangeSkillTemplate(): SkillTemplate {
    \`\`\`bash
    projector new change "<name>"
    \`\`\`
-   This creates a scaffolded change at \`projector/changes/<name>/\`.
+   This creates a scaffolded change at \`.projector/changes/<name>/\`.
 
 3. **Get the artifact build order**
    \`\`\`bash
@@ -768,7 +768,7 @@ This is an **agent-driven** operation - you will read delta specs and directly e
 
 2. **Find delta specs**
 
-   Look for delta spec files in \`projector/changes/<name>/specs/*/spec.md\`.
+   Look for delta spec files in \`.projector/changes/<name>/specs/*/spec.md\`.
 
    Each delta spec file contains sections like:
    - \`## ADDED Requirements\` - New requirements to add
@@ -780,11 +780,11 @@ This is an **agent-driven** operation - you will read delta specs and directly e
 
 3. **For each delta spec, apply changes to main specs**
 
-   For each capability with a delta spec at \`projector/changes/<name>/specs/<capability>/spec.md\`:
+   For each capability with a delta spec at \`.projector/changes/<name>/specs/<capability>/spec.md\`:
 
    a. **Read the delta spec** to understand the intended changes
 
-   b. **Read the main spec** at \`projector/specs/<capability>/spec.md\` (may not exist yet)
+   b. **Read the main spec** at \`.projector/specs/<capability>/spec.md\` (may not exist yet)
 
    c. **Apply changes intelligently**:
 
@@ -807,7 +807,7 @@ This is an **agent-driven** operation - you will read delta specs and directly e
       - Find the FROM requirement, rename to TO
 
    d. **Create new main spec** if capability doesn't exist yet:
-      - Create \`projector/specs/<capability>/spec.md\`
+      - Create \`.projector/specs/<capability>/spec.md\`
       - Add Purpose section (can be brief, mark as TBD)
       - Add Requirements section with the ADDED requirements
 
@@ -1003,9 +1003,9 @@ Think freely. When insights crystallize, you might offer:
 If the user mentions a change or you detect one is relevant:
 
 1. **Read existing artifacts for context**
-   - \`projector/changes/<name>/proposal.md\`
-   - \`projector/changes/<name>/design.md\`
-   - \`projector/changes/<name>/tasks.md\`
+   - \`.projector/changes/<name>/proposal.md\`
+   - \`.projector/changes/<name>/design.md\`
+   - \`.projector/changes/<name>/tasks.md\`
    - etc.
 
 2. **Reference them naturally in conversation**
@@ -1108,7 +1108,7 @@ export function getOpsxNewCommandTemplate(): CommandTemplate {
    projector new change "<name>"
    \`\`\`
    Add \`--schema <name>\` only if the user requested a specific workflow.
-   This creates a scaffolded change at \`projector/changes/<name>/\` with the selected schema.
+   This creates a scaffolded change at \`.projector/changes/<name>/\` with the selected schema.
 
 4. **Show the artifact status**
    \`\`\`bash
@@ -1446,7 +1446,7 @@ export function getOpsxFfCommandTemplate(): CommandTemplate {
    \`\`\`bash
    projector new change "<name>"
    \`\`\`
-   This creates a scaffolded change at \`projector/changes/<name>/\`.
+   This creates a scaffolded change at \`.projector/changes/<name>/\`.
 
 3. **Get the artifact build order**
    \`\`\`bash
@@ -1569,11 +1569,11 @@ export function getArchiveChangeSkillTemplate(): SkillTemplate {
 
    **If delta specs exist, perform a quick sync check:**
 
-   a. **For each delta spec** at \`projector/changes/<name>/specs/<capability>/spec.md\`:
+   a. **For each delta spec** at \`.projector/changes/<name>/specs/<capability>/spec.md\`:
       - Extract requirement names (lines matching \`### Requirement: <name>\`)
       - Note which sections exist (ADDED, MODIFIED, REMOVED)
 
-   b. **Check corresponding main spec** at \`projector/specs/<capability>/spec.md\`:
+   b. **Check corresponding main spec** at \`.projector/specs/<capability>/spec.md\`:
       - If main spec doesn't exist → needs sync
       - If main spec exists, check if ADDED requirement names appear in it
       - If any ADDED requirements are missing from main spec → needs sync
@@ -1600,7 +1600,7 @@ export function getArchiveChangeSkillTemplate(): SkillTemplate {
 
    Create the archive directory if it doesn't exist:
    \`\`\`bash
-   mkdir -p projector/changes/archive
+   mkdir -p .projector/changes/archive
    \`\`\`
 
    Generate target name using current date: \`YYYY-MM-DD-<change-name>\`
@@ -1610,7 +1610,7 @@ export function getArchiveChangeSkillTemplate(): SkillTemplate {
    - If no: Move the change directory to archive
 
    \`\`\`bash
-   mv projector/changes/<name> projector/changes/archive/YYYY-MM-DD-<name>
+   mv .projector/changes/<name> .projector/changes/archive/YYYY-MM-DD-<name>
    \`\`\`
 
 6. **Display summary**
@@ -1629,7 +1629,7 @@ export function getArchiveChangeSkillTemplate(): SkillTemplate {
 
 **Change:** <change-name>
 **Schema:** <schema-name>
-**Archived to:** projector/changes/archive/YYYY-MM-DD-<name>/
+**Archived to:** .projector/changes/archive/YYYY-MM-DD-<name>/
 **Specs:** ✓ Synced to main specs (or "No delta specs" or "⚠️ Not synced")
 
 All artifacts complete. All tasks complete.
@@ -1673,7 +1673,7 @@ This is an **agent-driven** operation - you will read delta specs and directly e
 
 2. **Find delta specs**
 
-   Look for delta spec files in \`projector/changes/<name>/specs/*/spec.md\`.
+   Look for delta spec files in \`.projector/changes/<name>/specs/*/spec.md\`.
 
    Each delta spec file contains sections like:
    - \`## ADDED Requirements\` - New requirements to add
@@ -1685,11 +1685,11 @@ This is an **agent-driven** operation - you will read delta specs and directly e
 
 3. **For each delta spec, apply changes to main specs**
 
-   For each capability with a delta spec at \`projector/changes/<name>/specs/<capability>/spec.md\`:
+   For each capability with a delta spec at \`.projector/changes/<name>/specs/<capability>/spec.md\`:
 
    a. **Read the delta spec** to understand the intended changes
 
-   b. **Read the main spec** at \`projector/specs/<capability>/spec.md\` (may not exist yet)
+   b. **Read the main spec** at \`.projector/specs/<capability>/spec.md\` (may not exist yet)
 
    c. **Apply changes intelligently**:
 
@@ -1712,7 +1712,7 @@ This is an **agent-driven** operation - you will read delta specs and directly e
       - Find the FROM requirement, rename to TO
 
    d. **Create new main spec** if capability doesn't exist yet:
-      - Create \`projector/specs/<capability>/spec.md\`
+      - Create \`.projector/specs/<capability>/spec.md\`
       - Add Purpose section (can be brief, mark as TBD)
       - Add Requirements section with the ADDED requirements
 
@@ -1841,11 +1841,11 @@ export function getOpsxArchiveCommandTemplate(): CommandTemplate {
 
    **If delta specs exist, perform a quick sync check:**
 
-   a. **For each delta spec** at \`projector/changes/<name>/specs/<capability>/spec.md\`:
+   a. **For each delta spec** at \`.projector/changes/<name>/specs/<capability>/spec.md\`:
       - Extract requirement names (lines matching \`### Requirement: <name>\`)
       - Note which sections exist (ADDED, MODIFIED, REMOVED)
 
-   b. **Check corresponding main spec** at \`projector/specs/<capability>/spec.md\`:
+   b. **Check corresponding main spec** at \`.projector/specs/<capability>/spec.md\`:
       - If main spec doesn't exist → needs sync
       - If main spec exists, check if ADDED requirement names appear in it
       - If any ADDED requirements are missing from main spec → needs sync
@@ -1872,7 +1872,7 @@ export function getOpsxArchiveCommandTemplate(): CommandTemplate {
 
    Create the archive directory if it doesn't exist:
    \`\`\`bash
-   mkdir -p projector/changes/archive
+   mkdir -p .projector/changes/archive
    \`\`\`
 
    Generate target name using current date: \`YYYY-MM-DD-<change-name>\`
@@ -1882,7 +1882,7 @@ export function getOpsxArchiveCommandTemplate(): CommandTemplate {
    - If no: Move the change directory to archive
 
    \`\`\`bash
-   mv projector/changes/<name> projector/changes/archive/YYYY-MM-DD-<name>
+   mv .projector/changes/<name> .projector/changes/archive/YYYY-MM-DD-<name>
    \`\`\`
 
 6. **Display summary**
@@ -1901,7 +1901,7 @@ export function getOpsxArchiveCommandTemplate(): CommandTemplate {
 
 **Change:** <change-name>
 **Schema:** <schema-name>
-**Archived to:** projector/changes/archive/YYYY-MM-DD-<name>/
+**Archived to:** .projector/changes/archive/YYYY-MM-DD-<name>/
 **Specs:** ✓ Synced to main specs
 
 All artifacts complete. All tasks complete.
@@ -1914,7 +1914,7 @@ All artifacts complete. All tasks complete.
 
 **Change:** <change-name>
 **Schema:** <schema-name>
-**Archived to:** projector/changes/archive/YYYY-MM-DD-<name>/
+**Archived to:** .projector/changes/archive/YYYY-MM-DD-<name>/
 **Specs:** No delta specs
 
 All artifacts complete. All tasks complete.
@@ -1927,7 +1927,7 @@ All artifacts complete. All tasks complete.
 
 **Change:** <change-name>
 **Schema:** <schema-name>
-**Archived to:** projector/changes/archive/YYYY-MM-DD-<name>/
+**Archived to:** .projector/changes/archive/YYYY-MM-DD-<name>/
 **Specs:** ⚠️ Not synced
 
 **Warnings:**
@@ -1944,7 +1944,7 @@ Review the archive if this was not intentional.
 ## Archive Failed
 
 **Change:** <change-name>
-**Target:** projector/changes/archive/YYYY-MM-DD-<name>/
+**Target:** .projector/changes/archive/YYYY-MM-DD-<name>/
 
 Target archive directory already exists.
 

@@ -17,7 +17,7 @@ export const ProjectConfigSchema = z
   .object({
     /**
      * The path (relative to project root) where projector stores its files.
-     * Defaults to 'projector'.
+      * Defaults to '.projector'.
      */
     projectPath: z.string().optional(),
   })
@@ -112,7 +112,7 @@ export function saveProjectConfig(projectRoot: string, config: ProjectConfig): v
  * Priority order:
  * 1. Repo-level projector.json projectPath
  * 2. Global config (~/.config/projector/config.json) projectPath
- * 3. Default: 'projector'
+ * 3. Default: '.projector'
  *
  * @param projectRoot - The root directory of the project (defaults to cwd)
  * @returns The Projector directory name (relative path)

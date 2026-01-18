@@ -1,5 +1,14 @@
 import { agentsTemplate } from './agents-template.js';
 import { projectTemplate, ProjectContext } from './project-template.js';
+
+export interface TemplateContext {
+  projectorDir: string;
+}
+
+export type ProjectorTemplateContext = ProjectContext & TemplateContext;
+export type ProjectorPlanningTemplateContext = PlanningContext & TemplateContext;
+export type ProjectorCommandTemplateContext = CommandContext & TemplateContext;
+export type ProjectorResearchTemplateContext = ResearchContext & TemplateContext;
 import { claudeTemplate } from './claude-template.js';
 import { clineTemplate } from './cline-template.js';
 import { costrictTemplate } from './costrict-template.js';
@@ -45,20 +54,20 @@ export class TemplateManager {
     ];
   }
 
-  static getClaudeTemplate(): string {
-    return claudeTemplate;
+  static getClaudeTemplate(context: { projectorDir: string } = { projectorDir: '.projector' }): string {
+    return claudeTemplate(context);
   }
 
-  static getClineTemplate(): string {
-    return clineTemplate;
+  static getClineTemplate(context: { projectorDir: string } = { projectorDir: '.projector' }): string {
+    return clineTemplate(context);
   }
 
-  static getCostrictTemplate(): string {
-    return costrictTemplate;
+  static getCostrictTemplate(context: { projectorDir: string } = { projectorDir: '.projector' }): string {
+    return costrictTemplate(context);
   }
 
-  static getAgentsStandardTemplate(): string {
-    return agentsRootStubTemplate;
+  static getAgentsStandardTemplate(context: { projectorDir: string } = { projectorDir: '.projector' }): string {
+    return agentsRootStubTemplate(context);
   }
 
   static getSlashCommandBody(id: SlashCommandId): string {

@@ -1,4 +1,5 @@
 export interface ProjectContext {
+  projectorDir?: string;
   projectName?: string;
   description?: string;
   techStack?: string[];

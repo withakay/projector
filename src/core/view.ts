@@ -8,10 +8,11 @@ import { getProjectorPath } from './project-config.js';
 export class ViewCommand {
   async execute(targetPath: string = '.'): Promise<void> {
     const projectorDir = getProjectorPath(targetPath);
-    
+
     if (!fs.existsSync(projectorDir)) {
+      // Return no data rather than exiting to keep this usable in library/test contexts.
       console.error(chalk.red('No projector directory found'));
-      process.exit(1);
+      return;
     }
 
     console.log(chalk.bold('\nProjector Dashboard\n'));

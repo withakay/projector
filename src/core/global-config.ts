@@ -140,3 +140,11 @@ export function saveGlobalConfig(config: GlobalConfig): void {
 
   fs.writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n', 'utf-8');
 }
+
+/**
+ * Gets the user schemas directory path.
+ * This is where user-defined schema overrides are stored.
+ */
+export function getUserSchemasDir(): string {
+  return path.join(getGlobalDataDir(), 'schemas');
+}

@@ -29,12 +29,9 @@ export class ZshInstaller {
    * @returns true if Oh My Zsh is detected via $ZSH env var or directory exists
    */
   async isOhMyZshInstalled(): Promise<boolean> {
-    // First check for $ZSH environment variable (standard OMZ setup)
-    if (process.env.ZSH) {
-      return true;
-    }
+    // $ZSH is commonly set by Oh My Zsh, but treat it as advisory.
+    // Tests (and some environments) may set it even when OMZ isn't actually present.
 
-    // Fall back to checking for ~/.oh-my-zsh directory
     const ohMyZshPath = path.join(this.homeDir, '.oh-my-zsh');
 
     try {
@@ -324,6 +321,7 @@ export class ZshInstaller {
           : zshrcConfigured
             ? 'Completion script installed and .zshrc configured successfully'
             : 'Completion script installed successfully for Zsh';
+
       }
 
       return {
