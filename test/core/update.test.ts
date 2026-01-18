@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { UpdateCommand } from '../../src/core/update.js';
 import { FileSystemUtils } from '../../src/utils/file-system.js';
 import { ToolRegistry } from '../../src/core/configurators/registry.js';
+import { getProjectorPath } from '../../src/core/project-config.js';
 import path from 'path';
 import fs from 'fs/promises';
 import os from 'os';
@@ -18,7 +19,7 @@ describe('UpdateCommand', () => {
     await fs.mkdir(testDir, { recursive: true });
 
     // Create projector directory
-    const projectorDir = path.join(testDir, 'projector');
+    const projectorDir = getProjectorPath(testDir);
     await fs.mkdir(projectorDir, { recursive: true });
 
     updateCommand = new UpdateCommand();
@@ -58,7 +59,7 @@ More content after.`;
     const updatedContent = await fs.readFile(claudePath, 'utf-8');
     expect(updatedContent).toContain('<!-- PROJECTOR:START -->');
     expect(updatedContent).toContain('<!-- PROJECTOR:END -->');
-    expect(updatedContent).toContain("@/projector/AGENTS.md");
+    expect(updatedContent).toContain("@/.projector/AGENTS.md");
     expect(updatedContent).toContain('projector update');
     expect(updatedContent).toContain('Some existing content here');
     expect(updatedContent).toContain('More content after');
@@ -66,7 +67,7 @@ More content after.`;
     // Check console output
     const [logMessage] = consoleSpy.mock.calls[0];
     expect(logMessage).toContain(
-      'Updated Projector instructions (projector/AGENTS.md'
+      'Updated Projector instructions (.projector/AGENTS.md'
     );
     expect(logMessage).toContain('AGENTS.md (created)');
     expect(logMessage).toContain('Updated AI tool files: CLAUDE.md');
@@ -93,14 +94,14 @@ More notes here.`;
     const updatedContent = await fs.readFile(qwenPath, 'utf-8');
     expect(updatedContent).toContain('<!-- PROJECTOR:START -->');
     expect(updatedContent).toContain('<!-- PROJECTOR:END -->');
-    expect(updatedContent).toContain("@/projector/AGENTS.md");
+    expect(updatedContent).toContain("@/.projector/AGENTS.md");
     expect(updatedContent).toContain('projector update');
     expect(updatedContent).toContain('Some existing content.');
     expect(updatedContent).toContain('More notes here.');
 
     const [logMessage] = consoleSpy.mock.calls[0];
     expect(logMessage).toContain(
-      'Updated Projector instructions (projector/AGENTS.md'
+      'Updated Projector instructions (.projector/AGENTS.md'
     );
     expect(logMessage).toContain('AGENTS.md (created)');
     expect(logMessage).toContain('Updated AI tool files: QWEN.md');
@@ -139,7 +140,7 @@ Old slash content
 
     const [logMessage] = consoleSpy.mock.calls[0];
     expect(logMessage).toContain(
-      'Updated Projector instructions (projector/AGENTS.md'
+      'Updated Projector instructions (.projector/AGENTS.md'
     );
     expect(logMessage).toContain('AGENTS.md (created)');
     expect(logMessage).toContain(
@@ -178,7 +179,7 @@ Old body
 
     const [logMessage] = consoleSpy.mock.calls[0];
     expect(logMessage).toContain(
-      'Updated Projector instructions (projector/AGENTS.md'
+      'Updated Projector instructions (.projector/AGENTS.md'
     );
     expect(logMessage).toContain('AGENTS.md (created)');
     expect(logMessage).toContain(
@@ -267,7 +268,7 @@ More rules after.`;
     const updatedContent = await fs.readFile(clinePath, 'utf-8');
     expect(updatedContent).toContain('<!-- PROJECTOR:START -->');
     expect(updatedContent).toContain('<!-- PROJECTOR:END -->');
-    expect(updatedContent).toContain("@/projector/AGENTS.md");
+    expect(updatedContent).toContain("@/.projector/AGENTS.md");
     expect(updatedContent).toContain('projector update');
     expect(updatedContent).toContain('Some existing Cline rules here');
     expect(updatedContent).toContain('More rules after');
@@ -275,7 +276,7 @@ More rules after.`;
     // Check console output
     const [logMessage] = consoleSpy.mock.calls[0];
     expect(logMessage).toContain(
-      'Updated Projector instructions (projector/AGENTS.md'
+      'Updated Projector instructions (.projector/AGENTS.md'
     );
     expect(logMessage).toContain('AGENTS.md (created)');
     expect(logMessage).toContain('Updated AI tool files: CLINE.md');
@@ -323,7 +324,7 @@ Old slash content
 
     const [logMessage] = consoleSpy.mock.calls[0];
     expect(logMessage).toContain(
-      'Updated Projector instructions (projector/AGENTS.md'
+      'Updated Projector instructions (.projector/AGENTS.md'
     );
     expect(logMessage).toContain('AGENTS.md (created)');
     expect(logMessage).toContain(
@@ -358,7 +359,7 @@ Old body
 
     const [logMessage] = consoleSpy.mock.calls[0];
     expect(logMessage).toContain(
-      'Updated Projector instructions (projector/AGENTS.md'
+      'Updated Projector instructions (.projector/AGENTS.md'
     );
     expect(logMessage).toContain('AGENTS.md (created)');
     expect(logMessage).toContain(
@@ -396,7 +397,7 @@ Old body
 
     const [logMessage] = consoleSpy.mock.calls[0];
     expect(logMessage).toContain(
-      'Updated Projector instructions (projector/AGENTS.md'
+      'Updated Projector instructions (.projector/AGENTS.md'
     );
     expect(logMessage).toContain('AGENTS.md (created)');
     expect(logMessage).toContain(
@@ -470,7 +471,7 @@ Old body
 
     const [logMessage] = consoleSpy.mock.calls[0];
     expect(logMessage).toContain(
-      'Updated Projector instructions (projector/AGENTS.md'
+      'Updated Projector instructions (.projector/AGENTS.md'
     );
     expect(logMessage).toContain('AGENTS.md (created)');
     expect(logMessage).toContain(
@@ -1013,7 +1014,7 @@ Old slash content
 
     const [logMessage] = consoleSpy.mock.calls[0];
     expect(logMessage).toContain(
-      'Updated Projector instructions (projector/AGENTS.md'
+      'Updated Projector instructions (.projector/AGENTS.md'
     );
     expect(logMessage).toContain('AGENTS.md (created)');
     expect(logMessage).toContain(
@@ -1091,7 +1092,7 @@ Old slash content
 
     const [logMessage] = consoleSpy.mock.calls[0];
     expect(logMessage).toContain(
-      'Updated Projector instructions (projector/AGENTS.md'
+      'Updated Projector instructions (.projector/AGENTS.md'
     );
     expect(logMessage).toContain('AGENTS.md (created)');
     expect(logMessage).toContain(
@@ -1169,7 +1170,7 @@ Old body
 
     const [logMessage] = consoleSpy.mock.calls[0];
     expect(logMessage).toContain(
-      'Updated Projector instructions (projector/AGENTS.md'
+      'Updated Projector instructions (.projector/AGENTS.md'
     );
     expect(logMessage).toContain('AGENTS.md (created)');
     expect(logMessage).toContain(
@@ -1210,7 +1211,7 @@ Old slash content
 
     const [logMessage] = consoleSpy.mock.calls[0];
     expect(logMessage).toContain(
-      'Updated Projector instructions (projector/AGENTS.md'
+      'Updated Projector instructions (.projector/AGENTS.md'
     );
     expect(logMessage).toContain('AGENTS.md (created)');
     expect(logMessage).toContain(
@@ -1250,7 +1251,7 @@ Old body
 
     const [logMessage] = consoleSpy.mock.calls[0];
     expect(logMessage).toContain(
-      'Updated Projector instructions (projector/AGENTS.md'
+      'Updated Projector instructions (.projector/AGENTS.md'
     );
     expect(logMessage).toContain('AGENTS.md (created)');
     expect(logMessage).toContain(
@@ -1388,7 +1389,7 @@ More instructions after.`;
     const updatedContent = await fs.readFile(costrictPath, 'utf-8');
     expect(updatedContent).toContain('<!-- PROJECTOR:START -->');
     expect(updatedContent).toContain('<!-- PROJECTOR:END -->');
-    expect(updatedContent).toContain("@/projector/AGENTS.md");
+    expect(updatedContent).toContain("@/.projector/AGENTS.md");
     expect(updatedContent).toContain('projector update');
     expect(updatedContent).toContain('Some existing CoStrict instructions here');
     expect(updatedContent).toContain('More instructions after');
@@ -1396,7 +1397,7 @@ More instructions after.`;
     // Check console output
     const [logMessage] = consoleSpy.mock.calls[0];
     expect(logMessage).toContain(
-      'Updated Projector instructions (projector/AGENTS.md'
+      'Updated Projector instructions (.projector/AGENTS.md'
     );
     expect(logMessage).toContain('AGENTS.md (created)');
     expect(logMessage).toContain('Updated AI tool files: COSTRICT.md');
@@ -1462,7 +1463,7 @@ More instructions after.`;
     expect(errorSpy).toHaveBeenCalled();
     const [logMessage] = consoleSpy.mock.calls[0];
     expect(logMessage).toContain(
-      'Updated Projector instructions (projector/AGENTS.md'
+      'Updated Projector instructions (.projector/AGENTS.md'
     );
     expect(logMessage).toContain('AGENTS.md (created)');
     expect(logMessage).toContain('Failed to update: COSTRICT.md');
@@ -1526,7 +1527,7 @@ More instructions after.`;
     // Should only update Projector instructions
     const [logMessage] = consoleSpy.mock.calls[0];
     expect(logMessage).toContain(
-      'Updated Projector instructions (projector/AGENTS.md'
+      'Updated Projector instructions (.projector/AGENTS.md'
     );
     expect(logMessage).toContain('AGENTS.md (created)');
     consoleSpy.mockRestore();
@@ -1550,7 +1551,7 @@ More instructions after.`;
     // Should report updating with new format
     const [logMessage] = consoleSpy.mock.calls[0];
     expect(logMessage).toContain(
-      'Updated Projector instructions (projector/AGENTS.md'
+      'Updated Projector instructions (.projector/AGENTS.md'
     );
     expect(logMessage).toContain('AGENTS.md (created)');
     expect(logMessage).toContain('Updated AI tool files: CLAUDE.md');
@@ -1613,7 +1614,7 @@ Old content
     await updateCommand.execute(testDir);
 
     // Check that AGENTS.md was created/updated
-    const agentsPath = path.join(testDir, 'projector', 'AGENTS.md');
+    const agentsPath = path.join(getProjectorPath(testDir), 'AGENTS.md');
     const fileExists = await FileSystemUtils.fileExists(agentsPath);
     expect(fileExists).toBe(true);
 
@@ -1630,7 +1631,7 @@ Old content
 
     const content = await fs.readFile(rootAgentsPath, 'utf-8');
     expect(content).toContain('<!-- PROJECTOR:START -->');
-    expect(content).toContain("@/projector/AGENTS.md");
+    expect(content).toContain("@/.projector/AGENTS.md");
     expect(content).toContain('projector update');
     expect(content).toContain('<!-- PROJECTOR:END -->');
   });
@@ -1647,13 +1648,13 @@ Old content
     const updated = await fs.readFile(rootAgentsPath, 'utf-8');
     expect(updated).toContain('# Custom intro');
     expect(updated).toContain('# Footnotes');
-    expect(updated).toContain("@/projector/AGENTS.md");
+    expect(updated).toContain("@/.projector/AGENTS.md");
     expect(updated).toContain('projector update');
     expect(updated).not.toContain('Old content');
 
     const [logMessage] = consoleSpy.mock.calls[0];
     expect(logMessage).toContain(
-      'Updated Projector instructions (projector/AGENTS.md, AGENTS.md)'
+      'Updated Projector instructions (.projector/AGENTS.md, AGENTS.md)'
     );
     expect(logMessage).not.toContain('AGENTS.md (created)');
 
@@ -1662,7 +1663,7 @@ Old content
 
   it('should throw error if projector directory does not exist', async () => {
     // Remove projector directory
-    await fs.rm(path.join(testDir, 'projector'), {
+    await fs.rm(getProjectorPath(testDir), {
       recursive: true,
       force: true,
     });
@@ -1702,7 +1703,7 @@ Old content
     expect(errorSpy).toHaveBeenCalled();
     const [logMessage] = consoleSpy.mock.calls[0];
     expect(logMessage).toContain(
-      'Updated Projector instructions (projector/AGENTS.md'
+      'Updated Projector instructions (.projector/AGENTS.md'
     );
     expect(logMessage).toContain('AGENTS.md (created)');
     expect(logMessage).toContain('Failed to update: CLAUDE.md');

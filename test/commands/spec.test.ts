@@ -2,11 +2,12 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { execSync } from 'child_process';
+import { getSpecsPath } from '../../src/core/project-config.js';
 
 describe('spec command', () => {
   const projectRoot = process.cwd();
   const testDir = path.join(projectRoot, 'test-spec-command-tmp');
-  const specsDir = path.join(testDir, 'projector', 'specs');
+  const specsDir = getSpecsPath(testDir);
   const projectorBin = path.join(projectRoot, 'bin', 'projector.js');
   
   

@@ -105,20 +105,17 @@ describe('global-config', () => {
 
     it('should not create directory when reading non-existent config', () => {
       process.env.XDG_CONFIG_HOME = tempDir;
-      const configDir = path.join(tempDir, 'projector');
 
       getGlobalConfig();
 
-      expect(fs.existsSync(configDir)).toBe(false);
+      expect(fs.existsSync(getGlobalConfigDir())).toBe(false);
     });
 
     it('should load valid config from file', () => {
       process.env.XDG_CONFIG_HOME = tempDir;
-      const configDir = path.join(tempDir, 'projector');
-      const configPath = path.join(configDir, 'config.json');
 
-      fs.mkdirSync(configDir, { recursive: true });
-      fs.writeFileSync(configPath, JSON.stringify({
+      fs.mkdirSync(getGlobalConfigDir(), { recursive: true });
+      fs.writeFileSync(getGlobalConfigPath(), JSON.stringify({
         featureFlags: { testFlag: true, anotherFlag: false }
       }));
 
@@ -129,11 +126,9 @@ describe('global-config', () => {
 
     it('should return defaults for invalid JSON', () => {
       process.env.XDG_CONFIG_HOME = tempDir;
-      const configDir = path.join(tempDir, 'projector');
-      const configPath = path.join(configDir, 'config.json');
 
-      fs.mkdirSync(configDir, { recursive: true });
-      fs.writeFileSync(configPath, '{ invalid json }');
+      fs.mkdirSync(getGlobalConfigDir(), { recursive: true });
+      fs.writeFileSync(getGlobalConfigPath(), '{ invalid json }');
 
       const config = getGlobalConfig();
 
@@ -142,11 +137,9 @@ describe('global-config', () => {
 
     it('should log warning for invalid JSON', () => {
       process.env.XDG_CONFIG_HOME = tempDir;
-      const configDir = path.join(tempDir, 'projector');
-      const configPath = path.join(configDir, 'config.json');
 
-      fs.mkdirSync(configDir, { recursive: true });
-      fs.writeFileSync(configPath, '{ invalid json }');
+      fs.mkdirSync(getGlobalConfigDir(), { recursive: true });
+      fs.writeFileSync(getGlobalConfigPath(), '{ invalid json }');
 
       getGlobalConfig();
 
@@ -157,11 +150,9 @@ describe('global-config', () => {
 
     it('should preserve unknown fields from config file', () => {
       process.env.XDG_CONFIG_HOME = tempDir;
-      const configDir = path.join(tempDir, 'projector');
-      const configPath = path.join(configDir, 'config.json');
 
-      fs.mkdirSync(configDir, { recursive: true });
-      fs.writeFileSync(configPath, JSON.stringify({
+      fs.mkdirSync(getGlobalConfigDir(), { recursive: true });
+      fs.writeFileSync(getGlobalConfigPath(), JSON.stringify({
         featureFlags: { x: true },
         unknownField: 'preserved',
         futureOption: 123
@@ -175,18 +166,14 @@ describe('global-config', () => {
 
     it('should merge loaded config with defaults', () => {
       process.env.XDG_CONFIG_HOME = tempDir;
-      const configDir = path.join(tempDir, 'projector');
-      const configPath = path.join(configDir, 'config.json');
 
-      // Config with only some fields
-      fs.mkdirSync(configDir, { recursive: true });
-      fs.writeFileSync(configPath, JSON.stringify({
+      fs.mkdirSync(getGlobalConfigDir(), { recursive: true });
+      fs.writeFileSync(getGlobalConfigPath(), JSON.stringify({
         featureFlags: { customFlag: true }
       }));
 
       const config = getGlobalConfig();
 
-      // Should have the custom flag
       expect(config.featureFlags?.customFlag).toBe(true);
     });
   });
@@ -194,37 +181,31 @@ describe('global-config', () => {
   describe('saveGlobalConfig', () => {
     it('should create directory if it does not exist', () => {
       process.env.XDG_CONFIG_HOME = tempDir;
-      const configDir = path.join(tempDir, 'projector');
 
       saveGlobalConfig({ featureFlags: { test: true } });
 
-      expect(fs.existsSync(configDir)).toBe(true);
+      expect(fs.existsSync(getGlobalConfigDir())).toBe(true);
     });
 
     it('should write config to file', () => {
       process.env.XDG_CONFIG_HOME = tempDir;
-      const configPath = path.join(tempDir, 'projector', 'config.json');
 
       saveGlobalConfig({ featureFlags: { myFlag: true } });
 
-      const content = fs.readFileSync(configPath, 'utf-8');
+      const content = fs.readFileSync(getGlobalConfigPath(), 'utf-8');
       const parsed = JSON.parse(content);
       expect(parsed.featureFlags.myFlag).toBe(true);
     });
 
     it('should overwrite existing config file', () => {
       process.env.XDG_CONFIG_HOME = tempDir;
-      const configDir = path.join(tempDir, 'projector');
-      const configPath = path.join(configDir, 'config.json');
 
-      // Create initial config
-      fs.mkdirSync(configDir, { recursive: true });
-      fs.writeFileSync(configPath, JSON.stringify({ featureFlags: { old: true } }));
+      fs.mkdirSync(getGlobalConfigDir(), { recursive: true });
+      fs.writeFileSync(getGlobalConfigPath(), JSON.stringify({ featureFlags: { old: true } }));
 
-      // Overwrite
       saveGlobalConfig({ featureFlags: { new: true } });
 
-      const content = fs.readFileSync(configPath, 'utf-8');
+      const content = fs.readFileSync(getGlobalConfigPath(), 'utf-8');
       const parsed = JSON.parse(content);
       expect(parsed.featureFlags.new).toBe(true);
       expect(parsed.featureFlags.old).toBeUndefined();
@@ -232,11 +213,10 @@ describe('global-config', () => {
 
     it('should write formatted JSON with trailing newline', () => {
       process.env.XDG_CONFIG_HOME = tempDir;
-      const configPath = path.join(tempDir, 'projector', 'config.json');
 
       saveGlobalConfig({ featureFlags: {} });
 
-      const content = fs.readFileSync(configPath, 'utf-8');
+      const content = fs.readFileSync(getGlobalConfigPath(), 'utf-8');
       expect(content).toContain('\n');
       expect(content.endsWith('\n')).toBe(true);
     });

@@ -3,6 +3,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import os from 'os';
 import { InitCommand } from '../../src/core/init.js';
+import { getChangesPath, getSpecsPath, getProjectorPath } from '../../src/core/project-config.js';
 
 const DONE = '__done__';
 
@@ -66,16 +67,16 @@ describe('InitCommand', () => {
 
       await initCommand.execute(testDir);
 
-      const projectorPath = path.join(testDir, 'projector');
+      const projectorPath = getProjectorPath(testDir);
       expect(await directoryExists(projectorPath)).toBe(true);
-      expect(await directoryExists(path.join(projectorPath, 'specs'))).toBe(
+      expect(await directoryExists(getSpecsPath(testDir))).toBe(
         true
       );
-      expect(await directoryExists(path.join(projectorPath, 'changes'))).toBe(
+      expect(await directoryExists(getChangesPath(testDir))).toBe(
         true
       );
       expect(
-        await directoryExists(path.join(projectorPath, 'changes', 'archive'))
+        await directoryExists(path.join(getChangesPath(testDir), 'archive'))
       ).toBe(true);
     });
 
@@ -84,7 +85,7 @@ describe('InitCommand', () => {
 
       await initCommand.execute(testDir);
 
-      const projectorPath = path.join(testDir, 'projector');
+      const projectorPath = getProjectorPath(testDir);
       expect(await fileExists(path.join(projectorPath, 'AGENTS.md'))).toBe(true);
       expect(await fileExists(path.join(projectorPath, 'project.md'))).toBe(
         true
@@ -113,7 +114,7 @@ describe('InitCommand', () => {
 
       const content = await fs.readFile(claudePath, 'utf-8');
       expect(content).toContain('<!-- PROJECTOR:START -->');
-      expect(content).toContain("@/projector/AGENTS.md");
+      expect(content).toContain("@/.projector/AGENTS.md");
       expect(content).toContain('projector update');
       expect(content).toContain('<!-- PROJECTOR:END -->');
     });
@@ -130,7 +131,7 @@ describe('InitCommand', () => {
 
       const updatedContent = await fs.readFile(claudePath, 'utf-8');
       expect(updatedContent).toContain('<!-- PROJECTOR:START -->');
-      expect(updatedContent).toContain("@/projector/AGENTS.md");
+      expect(updatedContent).toContain("@/.projector/AGENTS.md");
       expect(updatedContent).toContain('projector update');
       expect(updatedContent).toContain('<!-- PROJECTOR:END -->');
       expect(updatedContent).toContain('Custom instructions here');
@@ -146,7 +147,7 @@ describe('InitCommand', () => {
 
       const content = await fs.readFile(clinePath, 'utf-8');
       expect(content).toContain('<!-- PROJECTOR:START -->');
-      expect(content).toContain("@/projector/AGENTS.md");
+      expect(content).toContain("@/.projector/AGENTS.md");
       expect(content).toContain('projector update');
       expect(content).toContain('<!-- PROJECTOR:END -->');
     });
@@ -163,7 +164,7 @@ describe('InitCommand', () => {
 
       const updatedContent = await fs.readFile(clinePath, 'utf-8');
       expect(updatedContent).toContain('<!-- PROJECTOR:START -->');
-      expect(updatedContent).toContain("@/projector/AGENTS.md");
+      expect(updatedContent).toContain("@/.projector/AGENTS.md");
       expect(updatedContent).toContain('projector update');
       expect(updatedContent).toContain('<!-- PROJECTOR:END -->');
       expect(updatedContent).toContain('Custom Cline instructions here');
@@ -267,7 +268,7 @@ describe('InitCommand', () => {
 
       const content = await fs.readFile(rootAgentsPath, 'utf-8');
       expect(content).toContain('<!-- PROJECTOR:START -->');
-      expect(content).toContain("@/projector/AGENTS.md");
+      expect(content).toContain("@/.projector/AGENTS.md");
       expect(content).toContain('projector update');
       expect(content).toContain('<!-- PROJECTOR:END -->');
 
@@ -463,7 +464,7 @@ describe('InitCommand', () => {
 
       const updatedContent = await fs.readFile(iflowPath, 'utf-8');
       expect(updatedContent).toContain('<!-- PROJECTOR:START -->');
-      expect(updatedContent).toContain("@/projector/AGENTS.md");
+      expect(updatedContent).toContain("@/.projector/AGENTS.md");
       expect(updatedContent).toContain('projector update');
       expect(updatedContent).toContain('<!-- PROJECTOR:END -->');
       expect(updatedContent).toContain('Custom instructions here');
@@ -539,7 +540,7 @@ describe('InitCommand', () => {
 
       const qwenConfigContent = await fs.readFile(qwenConfigPath, 'utf-8');
       expect(qwenConfigContent).toContain('<!-- PROJECTOR:START -->');
-      expect(qwenConfigContent).toContain("@/projector/AGENTS.md");
+      expect(qwenConfigContent).toContain("@/.projector/AGENTS.md");
       expect(qwenConfigContent).toContain('<!-- PROJECTOR:END -->');
 
       const proposalContent = await fs.readFile(proposalPath, 'utf-8');
@@ -567,7 +568,7 @@ describe('InitCommand', () => {
 
       const updatedContent = await fs.readFile(qwenPath, 'utf-8');
       expect(updatedContent).toContain('<!-- PROJECTOR:START -->');
-      expect(updatedContent).toContain("@/projector/AGENTS.md");
+      expect(updatedContent).toContain("@/.projector/AGENTS.md");
       expect(updatedContent).toContain('projector update');
       expect(updatedContent).toContain('<!-- PROJECTOR:END -->');
       expect(updatedContent).toContain('Custom instructions here');
@@ -807,7 +808,7 @@ describe('InitCommand', () => {
       await testFileRecreationInExtendMode(
         testDir,
         initCommand,
-        'projector/AGENTS.md',
+        '.projector/AGENTS.md',
         'Projector Instructions'
       );
     });
@@ -816,7 +817,7 @@ describe('InitCommand', () => {
       await testFileRecreationInExtendMode(
         testDir,
         initCommand,
-        'projector/project.md',
+        '.projector/project.md',
         'Project Context'
       );
     });
@@ -827,7 +828,7 @@ describe('InitCommand', () => {
       // First init
       await initCommand.execute(testDir);
 
-      const agentsPath = path.join(testDir, 'projector', 'AGENTS.md');
+      const agentsPath = path.join(getProjectorPath(testDir), 'AGENTS.md');
       const customContent = '# My Custom AGENTS Content\nDo not overwrite this!';
 
       // Modify the file with custom content
@@ -847,7 +848,7 @@ describe('InitCommand', () => {
       const newDir = path.join(testDir, 'new-project');
       await initCommand.execute(newDir);
 
-      const projectorPath = path.join(newDir, 'projector');
+      const projectorPath = getProjectorPath(newDir);
       expect(await directoryExists(projectorPath)).toBe(true);
     });
 
@@ -1216,7 +1217,7 @@ describe('InitCommand', () => {
 
       const content = await fs.readFile(codeBuddyPath, 'utf-8');
       expect(content).toContain('<!-- PROJECTOR:START -->');
-      expect(content).toContain("@/projector/AGENTS.md");
+      expect(content).toContain("@/.projector/AGENTS.md");
       expect(content).toContain('projector update');
       expect(content).toContain('<!-- PROJECTOR:END -->');
     });
@@ -1233,7 +1234,7 @@ describe('InitCommand', () => {
 
       const updatedContent = await fs.readFile(codeBuddyPath, 'utf-8');
       expect(updatedContent).toContain('<!-- PROJECTOR:START -->');
-      expect(updatedContent).toContain("@/projector/AGENTS.md");
+      expect(updatedContent).toContain("@/.projector/AGENTS.md");
       expect(updatedContent).toContain('projector update');
       expect(updatedContent).toContain('<!-- PROJECTOR:END -->');
       expect(updatedContent).toContain('Custom instructions here');
@@ -1465,7 +1466,7 @@ describe('InitCommand', () => {
 
       const content = await fs.readFile(costrictPath, 'utf-8');
       expect(content).toContain('<!-- PROJECTOR:START -->');
-      expect(content).toContain("@/projector/AGENTS.md");
+      expect(content).toContain("@/.projector/AGENTS.md");
       expect(content).toContain('projector update');
       expect(content).toContain('<!-- PROJECTOR:END -->');
     });
@@ -1480,7 +1481,7 @@ describe('InitCommand', () => {
 
       const content = await fs.readFile(qoderPath, 'utf-8');
       expect(content).toContain('<!-- PROJECTOR:START -->');
-      expect(content).toContain("@/projector/AGENTS.md");
+      expect(content).toContain("@/.projector/AGENTS.md");
       expect(content).toContain('projector update');
       expect(content).toContain('<!-- PROJECTOR:END -->');
     });
@@ -1512,7 +1513,7 @@ describe('InitCommand', () => {
 
       const updatedContent = await fs.readFile(qoderPath, 'utf-8');
       expect(updatedContent).toContain('<!-- PROJECTOR:START -->');
-      expect(updatedContent).toContain("@/projector/AGENTS.md");
+      expect(updatedContent).toContain("@/.projector/AGENTS.md");
       expect(updatedContent).toContain('projector update');
       expect(updatedContent).toContain('<!-- PROJECTOR:END -->');
       expect(updatedContent).toContain('Custom instructions here');

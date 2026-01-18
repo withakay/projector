@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { ChangeCommand } from '../../../src/commands/change.js';
+import { getChangesPath } from '../../../src/core/project-config.js';
 import path from 'path';
 import { promises as fs } from 'fs';
 import os from 'os';
@@ -13,7 +14,7 @@ describe('ChangeCommand.list', () => {
     cmd = new ChangeCommand();
     originalCwd = process.cwd();
     tempRoot = path.join(os.tmpdir(), `projector-change-command-list-${Date.now()}`);
-    const changeDir = path.join(tempRoot, 'projector', 'changes', 'demo');
+    const changeDir = path.join(getChangesPath(tempRoot), 'demo');
     await fs.mkdir(changeDir, { recursive: true });
     const proposal = `# Change: Demo\n\n## Why\nTest list.\n\n## What Changes\n- **auth:** Add requirement`;
     await fs.writeFile(path.join(changeDir, 'proposal.md'), proposal, 'utf-8');

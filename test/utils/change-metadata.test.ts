@@ -11,6 +11,7 @@ import {
   ChangeMetadataError,
 } from '../../src/utils/change-metadata.js';
 import { ChangeMetadataSchema } from '../../src/core/artifact-graph/types.js';
+import { getChangesPath } from '../../src/core/project-config.js';
 
 describe('ChangeMetadataSchema', () => {
   describe('valid metadata', () => {
@@ -77,7 +78,7 @@ describe('writeChangeMetadata', () => {
 
   beforeEach(async () => {
     testDir = path.join(os.tmpdir(), `projector-test-${randomUUID()}`);
-    changeDir = path.join(testDir, 'projector', 'changes', 'test-change');
+    changeDir = path.join(getChangesPath(testDir), 'test-change');
     await fs.mkdir(changeDir, { recursive: true });
   });
 
@@ -114,7 +115,7 @@ describe('readChangeMetadata', () => {
 
   beforeEach(async () => {
     testDir = path.join(os.tmpdir(), `projector-test-${randomUUID()}`);
-    changeDir = path.join(testDir, 'projector', 'changes', 'test-change');
+    changeDir = path.join(getChangesPath(testDir), 'test-change');
     await fs.mkdir(changeDir, { recursive: true });
   });
 
@@ -170,7 +171,7 @@ describe('resolveSchemaForChange', () => {
 
   beforeEach(async () => {
     testDir = path.join(os.tmpdir(), `projector-test-${randomUUID()}`);
-    changeDir = path.join(testDir, 'projector', 'changes', 'test-change');
+    changeDir = path.join(getChangesPath(testDir), 'test-change');
     await fs.mkdir(changeDir, { recursive: true });
   });
 

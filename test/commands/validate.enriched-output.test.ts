@@ -2,11 +2,12 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { execSync } from 'child_process';
+import { getChangesPath } from '../../src/core/project-config.js';
 
 describe('validate command enriched human output', () => {
   const projectRoot = process.cwd();
   const testDir = path.join(projectRoot, 'test-validate-enriched-tmp');
-  const changesDir = path.join(testDir, 'projector', 'changes');
+  const changesDir = getChangesPath(testDir);
   const bin = path.join(projectRoot, 'bin', 'projector.js');
 
 

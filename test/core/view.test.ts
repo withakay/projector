@@ -3,6 +3,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import os from 'os';
 import { ViewCommand } from '../../src/core/view.js';
+import { getChangesPath } from '../../src/core/project-config.js';
 
 const stripAnsi = (input: string): string => input.replace(/\u001b\[[0-9;]*m/g, '');
 
@@ -29,7 +30,7 @@ describe('ViewCommand', () => {
   });
 
   it('shows changes with no tasks in Draft section, not Completed', async () => {
-    const changesDir = path.join(tempDir, 'projector', 'changes');
+    const changesDir = getChangesPath(tempDir);
     await fs.mkdir(changesDir, { recursive: true });
 
     // Empty change (no tasks.md) - should show in Draft
@@ -79,7 +80,7 @@ describe('ViewCommand', () => {
   });
 
   it('sorts active changes by completion percentage ascending with deterministic tie-breakers', async () => {
-    const changesDir = path.join(tempDir, 'projector', 'changes');
+    const changesDir = getChangesPath(tempDir);
     await fs.mkdir(changesDir, { recursive: true });
 
     await fs.mkdir(path.join(changesDir, 'gamma-change'), { recursive: true });

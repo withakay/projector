@@ -3,6 +3,7 @@ import { ChangeCommand } from '../../../src/commands/change.js';
 import path from 'path';
 import { promises as fs } from 'fs';
 import os from 'os';
+import { getChangesPath } from '../../../src/core/project-config.js';
 
 describe('ChangeCommand.show/validate', () => {
   let cmd: ChangeCommand;
@@ -14,7 +15,7 @@ describe('ChangeCommand.show/validate', () => {
     cmd = new ChangeCommand();
     originalCwd = process.cwd();
     tempRoot = path.join(os.tmpdir(), `projector-change-command-${Date.now()}`);
-    const changesDir = path.join(tempRoot, 'projector', 'changes', 'sample-change');
+    const changesDir = path.join(getChangesPath(tempRoot), 'sample-change');
     await fs.mkdir(changesDir, { recursive: true });
     const proposal = `# Change: Sample Change\n\n## Why\nConsistency in tests.\n\n## What Changes\n- **auth:** Add requirement`;
     await fs.writeFile(path.join(changesDir, 'proposal.md'), proposal, 'utf-8');

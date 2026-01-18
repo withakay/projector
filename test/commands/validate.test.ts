@@ -2,12 +2,13 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { runCLI } from '../helpers/run-cli.js';
+import { getChangesPath, getSpecsPath } from '../../src/core/project-config.js';
 
 describe('top-level validate command', () => {
   const projectRoot = process.cwd();
   const testDir = path.join(projectRoot, 'test-validate-command-tmp');
-  const changesDir = path.join(testDir, 'projector', 'changes');
-  const specsDir = path.join(testDir, 'projector', 'specs');
+  const changesDir = getChangesPath(testDir);
+  const specsDir = getSpecsPath(testDir);
 
   beforeEach(async () => {
     await fs.mkdir(changesDir, { recursive: true });

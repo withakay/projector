@@ -2,12 +2,13 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { execSync } from 'child_process';
+import { getChangesPath, getSpecsPath } from '../../src/core/project-config.js';
 
 describe('top-level show command', () => {
   const projectRoot = process.cwd();
   const testDir = path.join(projectRoot, 'test-show-command-tmp');
-  const changesDir = path.join(testDir, 'projector', 'changes');
-  const specsDir = path.join(testDir, 'projector', 'specs');
+  const changesDir = getChangesPath(testDir);
+  const specsDir = getSpecsPath(testDir);
   const projectorBin = path.join(projectRoot, 'bin', 'projector.js');
 
 

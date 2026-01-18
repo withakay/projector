@@ -3,6 +3,8 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import os from 'os';
 import { runCLI } from '../helpers/run-cli.js';
+import { getChangesPath } from '../../src/core/project-config.js';
+import { getUserSchemasDir } from '../../src/core/global-config.js';
 
 describe('artifact-workflow CLI commands', () => {
   let tempDir: string;
@@ -10,7 +12,7 @@ describe('artifact-workflow CLI commands', () => {
 
   beforeEach(async () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'projector-artifact-workflow-'));
-    changesDir = path.join(tempDir, 'projector', 'changes');
+    changesDir = getChangesPath(tempDir);
     await fs.mkdir(changesDir, { recursive: true });
   });
 
