@@ -153,7 +153,8 @@ async function uninstallSkills(skillIds: string[]): Promise<void> {
   
   try {
     const projectRoot = process.cwd();
-    const skillsDir = path.join(projectRoot, '.claude', 'skills');
+    const configurator = new SkillsConfigurator();
+    const skillsDir = configurator.getSkillsDirectory(projectRoot);
     
     let removedCount = 0;
     

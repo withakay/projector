@@ -10,10 +10,10 @@ export class StateCommand {
     return path.join(projectPath, projectorDir, 'planning', 'STATE.md');
   }
 
-  private async ensureStateFile(statePath: string): Promise<void> {
+  private async ensureStateFile(statePath: string, projectorDir: string): Promise<void> {
     if (!(await FileSystemUtils.fileExists(statePath))) {
       throw new Error(
-        'STATE.md not found. Run "projector init" first or create .projector/planning/STATE.md'
+        `STATE.md not found. Run "projector init" first or create ${projectorDir}/planning/STATE.md`
       );
     }
   }
@@ -30,7 +30,7 @@ export class StateCommand {
     const resolvedPath = path.resolve(projectPath);
     const statePath = await this.getStatePath(resolvedPath);
 
-    await this.ensureStateFile(statePath);
+    await this.ensureStateFile(statePath, getProjectorDirName(resolvedPath));
 
     const content = await FileSystemUtils.readFile(statePath);
     console.log(content);
@@ -43,7 +43,7 @@ export class StateCommand {
     const resolvedPath = path.resolve(projectPath);
     const statePath = await this.getStatePath(resolvedPath);
 
-    await this.ensureStateFile(statePath);
+    await this.ensureStateFile(statePath, getProjectorDirName(resolvedPath));
 
     const content = await FileSystemUtils.readFile(statePath);
     const date = this.getCurrentDate();
@@ -69,7 +69,7 @@ export class StateCommand {
     const resolvedPath = path.resolve(projectPath);
     const statePath = await this.getStatePath(resolvedPath);
 
-    await this.ensureStateFile(statePath);
+    await this.ensureStateFile(statePath, getProjectorDirName(resolvedPath));
 
     const content = await FileSystemUtils.readFile(statePath);
     const entry = `- ${text}`;
@@ -97,7 +97,7 @@ export class StateCommand {
     const resolvedPath = path.resolve(projectPath);
     const statePath = await this.getStatePath(resolvedPath);
 
-    await this.ensureStateFile(statePath);
+    await this.ensureStateFile(statePath, getProjectorDirName(resolvedPath));
 
     const content = await FileSystemUtils.readFile(statePath);
     const date = this.getCurrentDate();
@@ -134,7 +134,7 @@ export class StateCommand {
     const resolvedPath = path.resolve(projectPath);
     const statePath = await this.getStatePath(resolvedPath);
 
-    await this.ensureStateFile(statePath);
+    await this.ensureStateFile(statePath, getProjectorDirName(resolvedPath));
 
     const content = await FileSystemUtils.readFile(statePath);
 
@@ -155,7 +155,7 @@ export class StateCommand {
     const resolvedPath = path.resolve(projectPath);
     const statePath = await this.getStatePath(resolvedPath);
 
-    await this.ensureStateFile(statePath);
+    await this.ensureStateFile(statePath, getProjectorDirName(resolvedPath));
 
     const content = await FileSystemUtils.readFile(statePath);
     const entry = `- [ ] ${text}`;
