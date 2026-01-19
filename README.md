@@ -31,6 +31,7 @@ It’s designed for the reality of AI-assisted development where work spans mult
 - Agent configuration: per-tool models + context budgets (`config.yaml`)
 - Workflow orchestration: YAML workflows with waves + checkpoints, plus execution status tracking
 - Unified “research” and “adversarial review” workflows available as slash commands in supported tools
+- Projector agent skills installed automatically during init
 
 ## Quick Start
 
@@ -51,13 +52,15 @@ projector --version
 projector init
 ```
 
-This creates Projector’s working directory (default: `.projector/`) and installs tool-specific slash commands where supported.
+This creates Projector’s working directory (default: `.projector/`), installs Projector agent skills, and generates slash commands for the selected supported tools.
 
-Note: older docs (and some templates) may refer to `projector/` as the working directory. In this fork, the default is `.projector/`.
+Note: older docs (and some templates) may refer to `projector/` as the working directory. In this fork, the default is `.projector/`, and the directory name can be customized via `projector.json`.
+
+Projector agent skills are installed to `.claude/skills/<skill>/SKILL.md` so supported assistants can load the authoritative instructions.
 
 ## On-Disk Layout
 
-After `projector init`, you’ll typically have:
+After `projector init`, you’ll typically have (default layout shown):
 
 ```text
 .projector/
