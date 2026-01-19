@@ -15,14 +15,7 @@ const CORE_COMMANDS: SlashCommandId[] = ['proposal', 'apply', 'archive'];
 export const EXTENDED_COMMANDS: SlashCommandId[] = [
   ...CORE_COMMANDS,
   'research',
-  'research-stack',
-  'research-features',
-  'research-architecture',
-  'research-pitfalls',
   'review',
-  'review-security',
-  'review-scale',
-  'review-edge',
 ];
 
 export abstract class SlashCommandConfigurator {

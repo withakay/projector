@@ -10,15 +10,8 @@ const FILE_PATHS: Record<SlashCommandId, string> = {
   proposal: ".codex/prompts/projector-proposal.md",
   apply: ".codex/prompts/projector-apply.md",
   archive: ".codex/prompts/projector-archive.md",
-  'research': ".codex/prompts/projector-research.md",
-  'research-stack': ".codex/prompts/projector-research-stack.md",
-  'research-features': ".codex/prompts/projector-research-features.md",
-  'research-architecture': ".codex/prompts/projector-research-architecture.md",
-  'research-pitfalls': ".codex/prompts/projector-research-pitfalls.md",
-  'review': ".codex/prompts/projector-review.md",
-  'review-security': ".codex/prompts/projector-review-security.md",
-  'review-scale': ".codex/prompts/projector-review-scale.md",
-  'review-edge': ".codex/prompts/projector-review-edge.md",
+  research: ".codex/prompts/projector-research.md",
+  review: ".codex/prompts/projector-review.md",
 };
 
 export class CodexSlashCommandConfigurator extends SlashCommandConfigurator {
@@ -38,78 +31,37 @@ export class CodexSlashCommandConfigurator extends SlashCommandConfigurator {
     // plus $ARGUMENTS to capture all arguments as a single string.
     const frontmatter: Record<SlashCommandId, string> = {
       proposal: `---
-description: Scaffold a new Projector change and validate strictly.
-argument-hint: request or feature description
----
-
-$ARGUMENTS`,
+ description: Scaffold a new Projector change and validate strictly.
+ argument-hint: request or feature description
+ ---
+ 
+ $ARGUMENTS`,
       apply: `---
-description: Implement an approved Projector change and keep tasks in sync.
-argument-hint: change-id
----
-
-$ARGUMENTS`,
+ description: Implement an approved Projector change and keep tasks in sync.
+ argument-hint: change-id
+ ---
+ 
+ $ARGUMENTS`,
       archive: `---
-description: Archive a deployed Projector change and update specs.
-argument-hint: change-id
----
-
-$ARGUMENTS`,
-      'research': `---
-description: Conduct comprehensive domain research (parallel investigations + synthesis).
-argument-hint: topic to research
----
-
-$ARGUMENTS`,
-      'research-stack': `---
-description: Research technology stack options and recommendations.
-argument-hint: topic to research
----
-
-$ARGUMENTS`,
-      'research-features': `---
-description: Map feature landscape and prioritize capabilities.
-argument-hint: topic to research
----
-
-$ARGUMENTS`,
-      'research-architecture': `---
-description: Research architecture patterns and design decisions.
-argument-hint: topic to research
----
-
-$ARGUMENTS`,
-      'research-pitfalls': `---
-description: Identify common pitfalls and mitigation strategies.
-argument-hint: topic to research
----
-
-$ARGUMENTS`,
-      'review': `---
-description: Conduct adversarial review (security, scale, edge cases) of a change.
-argument-hint: change-id
----
-
-$ARGUMENTS`,
-      'review-security': `---
-description: Security review - find vulnerabilities and attack vectors.
-argument-hint: change-id
----
-
-$ARGUMENTS`,
-      'review-scale': `---
-description: Scale review - identify performance bottlenecks.
-argument-hint: change-id
----
-
-$ARGUMENTS`,
-      'review-edge': `---
-description: Edge case review - find boundary conditions and failure modes.
-argument-hint: change-id
----
-
-$ARGUMENTS`,
+ description: Archive a deployed Projector change and update specs.
+ argument-hint: change-id
+ ---
+ 
+ $ARGUMENTS`,
+      research: `---
+ description: Conduct Projector research via skills (stack, architecture, features, pitfalls).
+ argument-hint: topic to research
+ ---
+ 
+ $ARGUMENTS`,
+      review: `---
+ description: Conduct adversarial review via Projector review skill.
+ argument-hint: change-id
+ ---
+ 
+ $ARGUMENTS`,
     };
+
     return frontmatter[id];
   }
 
