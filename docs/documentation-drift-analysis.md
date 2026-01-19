@@ -1,13 +1,13 @@
-# Documentation Drift Analysis: Projector vs Original OpenSpec
+# Documentation Drift Analysis: Spool vs Original OpenSpec
 
 **Date**: 2026-01-18
-**Purpose**: Identify and document areas where Projector documentation has drifted from the original OpenSpec spec
+**Purpose**: Identify and document areas where Spool documentation has drifted from the original OpenSpec spec
 
 ---
 
 ## Executive Summary
 
-Projector is a fork of OpenSpec that has added significant features for project-centric planning and long-running, multi-agent workflows. This document identifies the key areas of documentation drift between the original OpenSpec conventions and the current Projector implementation.
+Spool is a fork of OpenSpec that has added significant features for project-centric planning and long-running, multi-agent workflows. This document identifies the key areas of documentation drift between the original OpenSpec conventions and the current Spool implementation.
 
 **Key Finding**: The primary drift is not in documentation, but in **feature additions** and **directory structure changes** that extend beyond the original OpenSpec scope.
 
@@ -17,7 +17,7 @@ Projector is a fork of OpenSpec that has added significant features for project-
 
 ### Original OpenSpec
 ```
-projector/
+spool/
 ├── AGENTS.md
 ├── project.md
 ├── specs/
@@ -30,10 +30,10 @@ projector/
     └── archive/
 ```
 
-### Current Projector
+### Current Spool
 ```
-.projector/                          # ← Hidden directory (changed from projector/)
-├── AGENTS.md                         # Root-level instructions (was in projector/)
+.spool/                          # ← Hidden directory (changed from spool/)
+├── AGENTS.md                         # Root-level instructions (was in spool/)
 ├── project.md                        # Minimal project overview
 ├── planning/                         # NEW: Project-level planning artifacts
 │   ├── PROJECT.md                    # NEW: Project vision, constraints
@@ -72,14 +72,14 @@ projector/
 
 | Document | Uses | Should Use |
 |----------|------|------------|
-| `README.md` | `.projector/` | ✅ Correct |
-| `AGENTS.md` | `.projector/` | ✅ Correct |
-| `cli-init/spec.md:28-34` | `projector/` | ❌ Should be `.projector/` |
-| `cli-validate/spec.md:13` | `projector/` | ❌ Should be `.projector/` |
-| `schema-customization.md` | `projector/` | ⚠️ Context-dependent |
-| `schema-workflow-gaps.md` | `projector/` | ⚠️ Context-dependent |
+| `README.md` | `.spool/` | ✅ Correct |
+| `AGENTS.md` | `.spool/` | ✅ Correct |
+| `cli-init/spec.md:28-34` | `spool/` | ❌ Should be `.spool/` |
+| `cli-validate/spec.md:13` | `spool/` | ❌ Should be `.spool/` |
+| `schema-customization.md` | `spool/` | ⚠️ Context-dependent |
+| `schema-workflow-gaps.md` | `spool/` | ⚠️ Context-dependent |
 
-**Critical Issue**: The `cli-init/spec.md` spec explicitly creates a `projector/` directory, but the README says the default is `.projector/`. This is a **documentation vs implementation inconsistency**.
+**Critical Issue**: The `cli-init/spec.md` spec explicitly creates a `spool/` directory, but the README says the default is `.spool/`. This is a **documentation vs implementation inconsistency**.
 
 ---
 
@@ -110,11 +110,11 @@ Descriptive text explaining the requirement.
 - Bold keywords: `**WHEN**`, `**THEN**`, `**AND**`
 - Descriptive text must follow requirement header before scenarios
 
-### Current Projector Spec Format
+### Current Spool Spec Format
 
 **Same as original OpenSpec** - ✅ No drift detected.
 
-The `projector-conventions/spec.md` explicitly defines and maintains the original format:
+The `spool-conventions/spec.md` explicitly defines and maintains the original format:
 - `### Requirement:` + descriptive text
 - `#### Scenario:` + bold WHEN/THEN/AND
 - Non-breaking gradual migration support
@@ -136,7 +136,7 @@ The `projector-conventions/spec.md` explicitly defines and maintains the origina
 - Bulleted list of changes
 ```
 
-### Current Projector Change Format
+### Current Spool Change Format
 
 **Enhanced format** (from `schemas/spec-driven/templates/proposal.md`):
 
@@ -225,11 +225,11 @@ Description of impact on existing functionality.
 **Purpose**: YAML-defined workflows with waves, tasks, and checkpoints.
 
 **Commands**:
-- `projector workflow init`
-- `projector workflow list`
-- `projector workflow show <workflow>`
-- `projector workflow run <workflow> --tool <tool> -v topic="..."`
-- `projector workflow status <workflow>`
+- `spool workflow init`
+- `spool workflow list`
+- `spool workflow show <workflow>`
+- `spool workflow run <workflow> --tool <tool> -v topic="..."`
+- `spool workflow status <workflow>`
 
 **Status**: ✅ Documented in README
 
@@ -242,10 +242,10 @@ Description of impact on existing functionality.
 **Purpose**: Per-tool model selection and context budgets.
 
 **Commands**:
-- `projector agent-config init`
-- `projector agent-config summary`
-- `projector agent-config get <path>`
-- `projector agent-config set <path> <value>`
+- `spool agent-config init`
+- `spool agent-config summary`
+- `spool agent-config get <path>`
+- `spool agent-config set <path> <value>`
 
 **Status**: ⚠️ Documented in README but **not implemented** in specs (no `agent-config` spec exists).
 
@@ -258,13 +258,13 @@ Description of impact on existing functionality.
 **Feature**: 2-level schema resolution (XDG user override → package built-in).
 
 **Resolution Order**:
-1. `./projector/schemas/<name>/` (NEW: Project-local)
-2. `~/.local/share/projector/schemas/<name>/` (User global)
+1. `./spool/schemas/<name>/` (NEW: Project-local)
+2. `~/.local/share/spool/schemas/<name>/` (User global)
 3. `<npm-package>/schemas/<name>/` (Built-in)
 
 **Status**: ✅ Documented in `schema-customization.md` and `schema-workflow-gaps.md`
 
-**Gap**: Schema management CLI (`projector schema list/copy/diff/reset`) is **proposed but not implemented**.
+**Gap**: Schema management CLI (`spool schema list/copy/diff/reset`) is **proposed but not implemented**.
 
 ---
 
@@ -292,24 +292,24 @@ description: Add user authentication system
 
 | Command | Status | Documentation |
 |---------|--------|----------------|
-| `projector plan init/status` | ✅ Implemented | README |
-| `projector research init/status` | ⚠️ Proposed | `project-planning-research-proposal.md` |
-| `projector tasks init/status/start/complete/next` | ⚠️ Proposed | `project-planning-research-proposal.md` |
-| `projector workflow init/list/show/run/status` | ✅ Implemented | README |
-| `projector agent-config init/summary/get/set` | ⚠️ Proposed | README |
-| `projector schema list/which/copy/diff/reset/validate` | ⚠️ Proposed | `schema-customization.md` |
-| `projector state` | ⚠️ Proposed | `project-planning-research-proposal.md` |
+| `spool plan init/status` | ✅ Implemented | README |
+| `spool research init/status` | ⚠️ Proposed | `project-planning-research-proposal.md` |
+| `spool tasks init/status/start/complete/next` | ⚠️ Proposed | `project-planning-research-proposal.md` |
+| `spool workflow init/list/show/run/status` | ✅ Implemented | README |
+| `spool agent-config init/summary/get/set` | ⚠️ Proposed | README |
+| `spool schema list/which/copy/diff/reset/validate` | ⚠️ Proposed | `schema-customization.md` |
+| `spool state` | ⚠️ Proposed | `project-planning-research-proposal.md` |
 
 ### 5.2 Enhanced Commands
 
 | Command | Enhancement | Status |
 |---------|-------------|--------|
-| `projector init` | AI tool selection, progress indicators | ✅ Implemented |
-| `projector list` | `--specs` flag, interactive selection | ✅ Implemented |
-| `projector show` | `--json`, `--deltas-only`, `--type` flags | ✅ Implemented |
-| `projector validate` | `--all`, `--changes`, `--specs`, `--strict`, `--type`, `--no-interactive` | ✅ Implemented |
-| `projector change` | `show`, `list`, `validate` subcommands | ✅ Implemented |
-| `projector archive` | Change arguments, dry-run | ✅ Implemented |
+| `spool init` | AI tool selection, progress indicators | ✅ Implemented |
+| `spool list` | `--specs` flag, interactive selection | ✅ Implemented |
+| `spool show` | `--json`, `--deltas-only`, `--type` flags | ✅ Implemented |
+| `spool validate` | `--all`, `--changes`, `--specs`, `--strict`, `--type`, `--no-interactive` | ✅ Implemented |
+| `spool change` | `show`, `list`, `validate` subcommands | ✅ Implemented |
+| `spool archive` | Change arguments, dry-run | ✅ Implemented |
 
 ---
 
@@ -317,15 +317,15 @@ description: Add user authentication system
 
 ### 6.1 Inconsistent Directory References
 
-**Issue**: Mixed use of `projector/` and `.projector/` across documentation.
+**Issue**: Mixed use of `spool/` and `.spool/` across documentation.
 
 **Examples**:
-- `cli-init/spec.md:28-34` creates `projector/` directory
-- `cli-validate/spec.md:13` references `projector/changes/`
-- `README.md` consistently uses `.projector/`
-- `schema-customization.md` uses `projector/schemas/` (project-local context)
+- `cli-init/spec.md:28-34` creates `spool/` directory
+- `cli-validate/spec.md:13` references `spool/changes/`
+- `README.md` consistently uses `.spool/`
+- `schema-customization.md` uses `spool/schemas/` (project-local context)
 
-**Recommendation**: Audit all documentation and standardize on `.projector/` for the working directory. Update `cli-init/spec.md` to reflect the actual implementation.
+**Recommendation**: Audit all documentation and standardize on `.spool/` for the working directory. Update `cli-init/spec.md` to reflect the actual implementation.
 
 ---
 
@@ -334,11 +334,11 @@ description: Add user authentication system
 **Issue**: Features are documented in README or proposals but lack corresponding spec files.
 
 **Examples**:
-- `agent-config` commands: No spec in `.projector/specs/`
-- `plan` commands: No spec in `.projector/specs/`
-- `research` commands: No spec in `.projector/specs/`
-- `tasks` commands: No spec in `.projector/specs/`
-- `workflow` commands: No spec in `.projector/specs/`
+- `agent-config` commands: No spec in `.spool/specs/`
+- `plan` commands: No spec in `.spool/specs/`
+- `research` commands: No spec in `.spool/specs/`
+- `tasks` commands: No spec in `.spool/specs/`
+- `workflow` commands: No spec in `.spool/specs/`
 
 **Impact**: Features are described but not formally specified, leading to implementation ambiguity.
 
@@ -398,7 +398,7 @@ description: Add user authentication system
 | `cli-show/spec.md` | ✅ | None |
 | `cli-validate/spec.md` | ✅ | Directory name inconsistency |
 | `artifact-graph/spec.md` | ✅ | None |
-| `projector-conventions/spec.md` | ✅ | None |
+| `spool-conventions/spec.md` | ✅ | None |
 
 **Overall**: ✅ Spec format is consistent and follows original OpenSpec conventions.
 
@@ -412,7 +412,7 @@ description: Add user authentication system
 | `2025-08-19-structured-spec-format` | ✅ | None |
 | `2025-10-14-add-non-interactive-init-options` | ✅ | None |
 
-**Overall**: ✅ Change proposals follow the enhanced Projector format.
+**Overall**: ✅ Change proposals follow the enhanced Spool format.
 
 ---
 
@@ -421,16 +421,16 @@ description: Add user authentication system
 ### 8.1 High Priority
 
 1. **Fix directory name inconsistency**:
-   - Update `cli-init/spec.md` to use `.projector/`
-   - Update `cli-validate/spec.md` to use `.projector/`
-   - Add a migration note in README explaining the change from `projector/` to `.projector/`
+   - Update `cli-init/spec.md` to use `.spool/`
+   - Update `cli-validate/spec.md` to use `.spool/`
+   - Add a migration note in README explaining the change from `spool/` to `.spool/`
 
 2. **Create missing spec files**:
-   - `cli-plan/spec.md` for `projector plan` commands
-   - `cli-research/spec.md` for `projector research` commands
-   - `cli-tasks/spec.md` for `projector tasks` commands
-   - `cli-workflow/spec.md` for `projector workflow` commands
-   - `cli-agent-config/spec.md` for `projector agent-config` commands
+   - `cli-plan/spec.md` for `spool plan` commands
+   - `cli-research/spec.md` for `spool research` commands
+   - `cli-tasks/spec.md` for `spool tasks` commands
+   - `cli-workflow/spec.md` for `spool workflow` commands
+   - `cli-agent-config/spec.md` for `spool agent-config` commands
 
 3. **Update tasks.md template**:
    - Reflect the enhanced format with waves, verify commands, and status tracking
@@ -441,12 +441,12 @@ description: Add user authentication system
 
 4. **Implement proposed features**:
    - `change.yaml` metadata (as proposed in `schema-workflow-gaps.md`)
-   - Schema management CLI (`projector schema list/copy/diff/reset`)
+   - Schema management CLI (`spool schema list/copy/diff/reset`)
    - Project-local schema resolution
 
 5. **Document migration path**:
-   - Add migration guide for users with `projector/` directories
-   - Document how to upgrade from older Projector versions
+   - Add migration guide for users with `spool/` directories
+   - Document how to upgrade from older Spool versions
 
 ---
 
@@ -458,7 +458,7 @@ description: Add user authentication system
 
 7. **Improve documentation cross-references**:
    - Add links between related documentation files
-   - Create a comprehensive index of all Projector features
+   - Create a comprehensive index of all Spool features
 
 ---
 
@@ -471,8 +471,8 @@ description: Add user authentication system
 - ⚠️ **Feature completeness**: Many features are documented but not specified or implemented
 - ⚠️ **Template drift**: Tasks template doesn't match documented enhancements
 
-**Assessment**: Projector has successfully maintained the original OpenSpec core conventions while significantly extending the feature set. The primary documentation drift issues are:
-1. Inconsistent directory naming (projector/ vs .projector/)
+**Assessment**: Spool has successfully maintained the original OpenSpec core conventions while significantly extending the feature set. The primary documentation drift issues are:
+1. Inconsistent directory naming (spool/ vs .spool/)
 2. Missing spec files for documented features
 3. Outdated templates that don't reflect enhanced formats
 
@@ -485,7 +485,7 @@ description: Add user authentication system
 ### Documentation Files
 - `README.md` - Main project documentation
 - `AGENTS.md` - AI assistant instructions (root level)
-- `.projector/AGENTS.md` - AI assistant instructions (projector level)
+- `.spool/AGENTS.md` - AI assistant instructions (spool level)
 - `docs/schema-customization.md` - Schema customization guide
 - `docs/project-planning-research-proposal.md` - Planning and research extension proposal
 - `docs/schema-workflow-gaps.md` - Schema workflow analysis
@@ -499,19 +499,19 @@ description: Add user authentication system
 - `schemas/tdd/templates/*.md`
 
 ### Spec Files
-- `.projector/specs/cli-change/spec.md`
-- `.projector/specs/cli-init/spec.md`
-- `.projector/specs/cli-list/spec.md`
-- `.projector/specs/cli-show/spec.md`
-- `.projector/specs/cli-validate/spec.md`
-- `.projector/specs/artifact-graph/spec.md`
-- `.projector/specs/projector-conventions/spec.md`
+- `.spool/specs/cli-change/spec.md`
+- `.spool/specs/cli-init/spec.md`
+- `.spool/specs/cli-list/spec.md`
+- `.spool/specs/cli-show/spec.md`
+- `.spool/specs/cli-validate/spec.md`
+- `.spool/specs/artifact-graph/spec.md`
+- `.spool/specs/spool-conventions/spec.md`
 
 ### Archived Changes
-- `.projector/changes/archive/` - Historical change proposals
+- `.spool/changes/archive/` - Historical change proposals
 
 ---
 
 **Document Version**: 1.0
 **Last Updated**: 2026-01-18
-**Maintainer**: Projector Team
+**Maintainer**: Spool Team

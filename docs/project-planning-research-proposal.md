@@ -1,10 +1,10 @@
-# Projector Project Planning & Research Extension
+# Spool Project Planning & Research Extension
 
 > Tool-agnostic workflow for OpenCode, Codex CLI, Claude Code, and other AI coding assistants
 
 ## Executive Summary
 
-This proposal extends Projector with structured project planning, research capabilities, and execution patterns that work across AI coding tools. The design prioritizes **file-based workflows** and **markdown custom commands** that any AI assistant can follow.
+This proposal extends Spool with structured project planning, research capabilities, and execution patterns that work across AI coding tools. The design prioritizes **file-based workflows** and **markdown custom commands** that any AI assistant can follow.
 
 **Primary Target**: [OpenCode](https://opencode.ai/) - open source AI coding agent
 **Also Supports**: [Codex CLI](https://github.com/openai/codex), [Claude Code](https://docs.anthropic.com/claude-code), and other terminal-based AI assistants
@@ -30,7 +30,7 @@ This proposal extends Projector with structured project planning, research capab
 
 ## Problem Statement
 
-Current Projector workflow gaps:
+Current Spool workflow gaps:
 
 1. **No Research Phase**: Proposals jump directly to specs without domain investigation
 2. **No Project-Level Roadmapping**: Changes are isolated; no multi-phase planning
@@ -49,7 +49,7 @@ Add a research stage that runs **before** proposal creation for complex changes.
 #### Directory Structure
 
 ```
-projector/
+spool/
 ├── research/                    # Domain research artifacts
 │   ├── SUMMARY.md              # Synthesized findings
 │   └── investigations/
@@ -77,14 +77,14 @@ User describes goal
 └─────────────────────────────────────────────────┘
         │
         ▼
-Standard Projector proposal workflow
+Standard Spool proposal workflow
 ```
 
 #### Research Prompt Templates
 
 Research prompts are stored as markdown files that any AI tool can load:
 
-**`projector/commands/research-stack.md`**
+**`spool/commands/research-stack.md`**
 ```markdown
 # Research: Stack Analysis
 
@@ -98,7 +98,7 @@ Evaluate technology choices for the proposed feature/project.
 4. Document trade-offs between options
 
 ## Output Format
-Write findings to `projector/research/investigations/stack-analysis.md`:
+Write findings to `spool/research/investigations/stack-analysis.md`:
 
 ## Stack Analysis: [Topic]
 
@@ -119,7 +119,7 @@ Write findings to `projector/research/investigations/stack-analysis.md`:
 
 #### Research Output Template
 
-**`projector/research/SUMMARY.md`**
+**`spool/research/SUMMARY.md`**
 ```markdown
 # Research Summary: [Topic]
 
@@ -158,7 +158,7 @@ Add project-level planning above individual changes.
 #### Directory Structure
 
 ```
-projector/
+spool/
 ├── planning/                    # Project planning artifacts
 │   ├── PROJECT.md              # Vision, constraints, stakeholders
 │   ├── ROADMAP.md              # Phased milestone plan
@@ -263,7 +263,7 @@ Last Updated: [timestamp]
 When resuming work on this project:
 1. Read this STATE.md first
 2. Check ROADMAP.md for current phase
-3. Review any in-progress changes in `projector/changes/`
+3. Review any in-progress changes in `spool/changes/`
 4. Continue from "Current Focus" above
 ```
 
@@ -380,15 +380,15 @@ Sequential execution with context preservation via files:
 
 #### Execution Command (Custom Command)
 
-**`projector/commands/execute.md`**
+**`spool/commands/execute.md`**
 ```markdown
-# Execute Projector Tasks
+# Execute Spool Tasks
 
 ## Objective
 Execute tasks from a change proposal sequentially, verifying each before proceeding.
 
 ## Process
-1. Read `projector/planning/STATE.md` for current context
+1. Read `spool/planning/STATE.md` for current context
 2. Read the specified change's `tasks.md`
 3. Find the first task with status `[ ] pending`
 4. Execute the task:
@@ -416,7 +416,7 @@ Add systematic challenge phase to stress-test proposals.
 
 Store as custom commands that any tool can execute:
 
-**`projector/commands/review-security.md`**
+**`spool/commands/review-security.md`**
 ```markdown
 # Security Review
 
@@ -438,10 +438,10 @@ Find ways to exploit, bypass, or abuse the proposed system.
 4. Suggest mitigations
 
 ## Output
-Append findings to `projector/changes/[change-id]/REVIEW.md`
+Append findings to `spool/changes/[change-id]/REVIEW.md`
 ```
 
-**`projector/commands/review-scale.md`**
+**`spool/commands/review-scale.md`**
 ```markdown
 # Scale Review
 
@@ -459,7 +459,7 @@ What breaks at 10x, 100x, 1000x scale?
 5. Evaluate caching opportunities
 
 ## Output
-Append findings to `projector/changes/[change-id]/REVIEW.md`
+Append findings to `spool/changes/[change-id]/REVIEW.md`
 ```
 
 #### REVIEW.md Template
@@ -502,12 +502,12 @@ Append findings to `projector/changes/[change-id]/REVIEW.md`
 
 ### 6. Custom Commands
 
-Projector workflows are implemented as markdown custom commands compatible with all tools.
+Spool workflows are implemented as markdown custom commands compatible with all tools.
 
 #### Directory Structure
 
 ```
-projector/
+spool/
 ├── commands/                    # Custom command definitions
 │   ├── research-stack.md       # Stack analysis
 │   ├── research-features.md    # Feature landscape
@@ -534,39 +534,39 @@ projector/
 
 ```bash
 # Copy commands to OpenCode location
-cp -r projector/commands .opencode/commands/projector
+cp -r spool/commands .opencode/commands/spool
 
 # Use in OpenCode
-/projector/research-stack "authentication system"
-/projector/execute add-user-auth
-/projector/review-security add-user-auth
+/spool/research-stack "authentication system"
+/spool/execute add-user-auth
+/spool/review-security add-user-auth
 ```
 
 ---
 
 ## CLI Commands
 
-The `projector` CLI provides commands that work independently of AI tool:
+The `spool` CLI provides commands that work independently of AI tool:
 
 ```bash
 # Research commands
-projector research init                 # Create research/ structure
-projector research status               # Show research progress
+spool research init                 # Create research/ structure
+spool research status               # Show research progress
 
 # Planning commands
-projector plan init                     # Initialize planning/ directory
-projector plan milestone [name]         # Create new milestone
-projector plan phase [milestone] [name] # Add phase to milestone
-projector plan status                   # Show roadmap progress
+spool plan init                     # Initialize planning/ directory
+spool plan milestone [name]         # Create new milestone
+spool plan phase [milestone] [name] # Add phase to milestone
+spool plan status                   # Show roadmap progress
 
 # State commands
-projector state                         # Show current STATE.md
-projector state decision "[text]"       # Record a decision
-projector state blocker "[text]"        # Record a blocker
-projector state note "[text]"           # Add session note
+spool state                         # Show current STATE.md
+spool state decision "[text]"       # Record a decision
+spool state blocker "[text]"        # Record a blocker
+spool state note "[text]"           # Add session note
 
 # Validation
-projector validate [change-id] --strict # Validate including tasks format
+spool validate [change-id] --strict # Validate including tasks format
 ```
 
 ---
@@ -574,14 +574,14 @@ projector validate [change-id] --strict # Validate including tasks format
 ## Implementation Phases
 
 ### Phase 1: Foundation
-- Add `planning/` directory structure to `projector init`
+- Add `planning/` directory structure to `spool init`
 - Create PROJECT.md, STATE.md, ROADMAP.md templates
-- Add `projector state` commands
+- Add `spool state` commands
 - Document tool-agnostic workflow
 
 ### Phase 2: Research
 - Create research command templates
-- Add `projector/commands/` structure
+- Add `spool/commands/` structure
 - Document integration with OpenCode, Codex, Claude Code
 
 ### Phase 3: Enhanced Tasks
@@ -610,7 +610,7 @@ projector validate [change-id] --strict # Validate including tasks format
 
 ## Comparison: Before and After
 
-| Capability | Current Projector | With Planning Extension |
+| Capability | Current Spool | With Planning Extension |
 |------------|-----------------|------------------------|
 | Research | None | Structured investigation |
 | Project vision | project.md (basic) | PROJECT.md (structured) |

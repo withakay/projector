@@ -1,4 +1,4 @@
-# @withakay/projector
+# @withakay/spool
 
 ## 0.19.0
 
@@ -6,8 +6,8 @@
 
 - eb152eb: ### New Features
 
-  - **Continue IDE support** – Projector now generates slash commands for [Continue](https://continue.dev/), expanding editor integration options alongside Cursor, Windsurf, Claude Code, and others
-  - **Shell completions for Bash, Fish, and PowerShell** – Run `projector completion install` to set up tab completion in your preferred shell
+  - **Continue IDE support** – Spool now generates slash commands for [Continue](https://continue.dev/), expanding editor integration options alongside Cursor, Windsurf, Claude Code, and others
+  - **Shell completions for Bash, Fish, and PowerShell** – Run `spool completion install` to set up tab completion in your preferred shell
   - **`/opsx:explore` command** – A new thinking partner mode for exploring ideas and investigating problems before committing to changes
   - **Codebuddy slash command improvements** – Updated frontmatter format for better compatibility
 
@@ -18,7 +18,7 @@
 
   ### Other
 
-  - Added optional anonymous usage statistics to help understand how Projector is used. This is **opt-out** by default – set `PROJECTOR_TELEMETRY=0` or `DO_NOT_TRACK=1` to disable. Only command names and version are collected; no arguments, file paths, or content. Automatically disabled in CI environments.
+  - Added optional anonymous usage statistics to help understand how Spool is used. This is **opt-out** by default – set `SPOOL_TELEMETRY=0` or `DO_NOT_TRACK=1` to disable. Only command names and version are collected; no arguments, file paths, or content. Automatically disabled in CI environments.
 
 ## 0.18.0
 
@@ -36,7 +36,7 @@
 
   - Schema-aware apply instructions with inline guidance and XML output
   - Agent schema selection for experimental artifact workflow
-  - Per-change schema metadata via `.projector.yaml` files
+  - Per-change schema metadata via `.spool.yaml` files
   - Agent Skills for experimental artifact workflow
   - Instruction loader for template loading and change context
   - Restructured schemas as directories with templates
@@ -73,7 +73,7 @@
 
 - 2e71835: ### New Features
 
-  - Add `projector config` command for managing global configuration settings
+  - Add `spool config` command for managing global configuration settings
   - Implement global config directory with XDG Base Directory specification support
   - Add Oh-my-zsh shell completions support for enhanced CLI experience
 
@@ -106,9 +106,9 @@
 
 ### Minor Changes
 
-- Add Continue slash command support so `projector init` can generate `.continue/prompts/projector-*.prompt` files with MARKDOWN frontmatter and `$ARGUMENTS` placeholder, and refresh them on `projector update`.
+- Add Continue slash command support so `spool init` can generate `.continue/prompts/spool-*.prompt` files with MARKDOWN frontmatter and `$ARGUMENTS` placeholder, and refresh them on `spool update`.
 
-- Add Antigravity slash command support so `projector init` can generate `.agent/workflows/projector-*.md` files with description-only frontmatter and `projector update` refreshes existing workflows alongside Windsurf.
+- Add Antigravity slash command support so `spool init` can generate `.agent/workflows/spool-*.md` files with description-only frontmatter and `spool update` refreshes existing workflows alongside Windsurf.
 
 ## 0.15.0
 
@@ -116,7 +116,7 @@
 
 - 4758c5c: Add support for new AI tools with native slash command integration
 
-  - **Gemini CLI**: Add native TOML-based slash command support for Gemini CLI with `.gemini/commands/projector/` integration
+  - **Gemini CLI**: Add native TOML-based slash command support for Gemini CLI with `.gemini/commands/spool/` integration
   - **RooCode**: Add RooCode integration with configurator, slash commands, and templates
   - **Cline**: Fix Cline to use workflows instead of rules for slash commands (`.clinerules/workflows/` paths)
   - **Documentation**: Update documentation to reflect new integrations and workflow changes
@@ -131,7 +131,7 @@
   - feat: add $ARGUMENTS support to apply slash command for dynamic variable passing
   - feat: add Qoder CLI support to configuration and documentation
   - feat: add CoStrict AI assistant support
-  - fix: recreate missing projector template files in extend mode
+  - fix: recreate missing spool template files in extend mode
   - fix: prevent false 'already configured' detection for tools
   - fix: use change-id as fallback title instead of "Untitled Change"
   - docs: add guidance for populating project-level context
@@ -175,13 +175,13 @@
   This release includes two new features:
 
   - **Factory function support for slash commands**: Slash commands can now be defined as functions that return command objects, enabling dynamic command configuration
-  - **Non-interactive init options**: Added `--tools`, `--all-tools`, and `--skip-tools` CLI flags to `projector init` for automated initialization in CI/CD pipelines while maintaining backward compatibility with interactive mode
+  - **Non-interactive init options**: Added `--tools`, `--all-tools`, and `--skip-tools` CLI flags to `spool init` for automated initialization in CI/CD pipelines while maintaining backward compatibility with interactive mode
 
 ## 0.11.0
 
 ### Minor Changes
 
-- 312e1d6: Add Amazon Q Developer CLI integration. Projector now supports Amazon Q Developer with automatic prompt generation in `.amazonq/prompts/` directory, allowing you to use Projector slash commands with Amazon Q's @-syntax.
+- 312e1d6: Add Amazon Q Developer CLI integration. Spool now supports Amazon Q Developer with automatic prompt generation in `.amazonq/prompts/` directory, allowing you to use Spool slash commands with Amazon Q's @-syntax.
 
 ## 0.10.0
 
@@ -193,13 +193,13 @@
 
 ### Patch Changes
 
-- 2ae0484: Fix cross-platform path handling issues. This release includes fixes for joinPath behavior and slash command path resolution to ensure Projector works correctly across all platforms.
+- 2ae0484: Fix cross-platform path handling issues. This release includes fixes for joinPath behavior and slash command path resolution to ensure Spool works correctly across all platforms.
 
 ## 0.9.1
 
 ### Patch Changes
 
-- 8210970: Fix Projector not working on Windows when Codex integration is selected. This release includes fixes for cross-platform path handling and normalization to ensure Projector works correctly on Windows systems.
+- 8210970: Fix Spool not working on Windows when Codex integration is selected. This release includes fixes for cross-platform path handling and normalization to ensure Spool works correctly on Windows systems.
 
 ## 0.9.0
 
@@ -211,26 +211,26 @@
 
 ### Minor Changes
 
-- Add GitHub Copilot slash command support. Projector now writes prompts to `.github/prompts/projector-{proposal,apply,archive}.prompt.md` with YAML frontmatter and `$ARGUMENTS` placeholder, and refreshes them on `projector update`.
+- Add GitHub Copilot slash command support. Spool now writes prompts to `.github/prompts/spool-{proposal,apply,archive}.prompt.md` with YAML frontmatter and `$ARGUMENTS` placeholder, and refreshes them on `spool update`.
 
 ## 0.8.1
 
 ### Patch Changes
 
-- d070d08: Fix CLI version mismatch and add a release guard that validates the packed tarball prints the same version as package.json via `projector --version`.
+- d070d08: Fix CLI version mismatch and add a release guard that validates the packed tarball prints the same version as package.json via `spool --version`.
 
 ## 0.8.0
 
 ### Minor Changes
 
 - c29b06d: Add Windsurf support.
-- Add Codex slash command support. Projector now writes prompts directly to Codex's global directory (`~/.codex/prompts` or `$CODEX_HOME/prompts`) and refreshes them on `projector update`.
+- Add Codex slash command support. Spool now writes prompts directly to Codex's global directory (`~/.codex/prompts` or `$CODEX_HOME/prompts`) and refreshes them on `spool update`.
 
 ## 0.7.0
 
 ### Minor Changes
 
-- Add native Kilo Code workflow integration so `projector init` and `projector update` manage `.kilocode/workflows/projector-*.md` files.
+- Add native Kilo Code workflow integration so `spool init` and `spool update` manage `.kilocode/workflows/spool-*.md` files.
 - Always scaffold the managed root `AGENTS.md` hand-off stub and regroup the AI tool prompts during init/update to keep instructions consistent.
 
 ## 0.6.0
@@ -267,7 +267,7 @@
 
 ### Minor Changes
 
-- Add Projector change proposals for CLI improvements and enhanced user experience
+- Add Spool change proposals for CLI improvements and enhanced user experience
 - Add Opencode slash commands support for AI-driven development workflows
 
 ### Patch Changes
@@ -279,15 +279,15 @@
 
 ### Minor Changes
 
-- Enhance `projector init` with extend mode, multi-tool selection, and an interactive `AGENTS.md` configurator.
+- Enhance `spool init` with extend mode, multi-tool selection, and an interactive `AGENTS.md` configurator.
 
 ## 0.2.0
 
 ### Minor Changes
 
-- ce5cead: - Add an `projector view` dashboard that rolls up spec counts and change progress at a glance
-  - Generate and update AI slash commands alongside the renamed `projector/AGENTS.md` instructions file
-  - Remove the deprecated `projector diff` command and direct users to `projector show`
+- ce5cead: - Add an `spool view` dashboard that rolls up spec counts and change progress at a glance
+  - Generate and update AI slash commands alongside the renamed `spool/AGENTS.md` instructions file
+  - Remove the deprecated `spool diff` command and direct users to `spool show`
 
 ## 0.1.0
 

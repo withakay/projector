@@ -1,6 +1,6 @@
 # Schema Workflow: End-to-End Analysis
 
-This document analyzes the complete user journey for working with schemas in Projector, identifies gaps, and proposes a phased solution.
+This document analyzes the complete user journey for working with schemas in Spool, identifies gaps, and proposes a phased solution.
 
 ---
 
@@ -13,7 +13,7 @@ This document analyzes the complete user journey for working with schemas in Pro
 | Schema resolution (XDG) | 2-level: user override → package built-in |
 | Built-in schemas | `spec-driven`, `tdd` |
 | Artifact workflow commands | `status`, `next`, `instructions`, `templates` with `--schema` flag |
-| Change creation | `projector new change <name>` — no schema binding |
+| Change creation | `spool new change <name>` — no schema binding |
 
 ### What's Missing
 
@@ -34,18 +34,18 @@ This document analyzes the complete user journey for working with schemas in Pro
 
 **Today's experience:**
 ```bash
-projector new change add-auth
+spool new change add-auth
 # Creates directory, no schema info stored
 
-projector status --change add-auth
+spool status --change add-auth
 # Shows spec-driven artifacts (WRONG - user wanted TDD)
 
 # User realizes mistake...
-projector status --change add-auth --schema tdd
+spool status --change add-auth --schema tdd
 # Correct, but must remember --schema every time
 
 # 6 months later...
-projector status --change add-auth
+spool status --change add-auth
 # Wrong again - nobody remembers this was TDD
 ```
 
@@ -64,23 +64,23 @@ projector status --change add-auth
 ```bash
 # Step 1: Figure out where to put overrides
 # Must know XDG conventions:
-#   macOS/Linux: ~/.local/share/projector/schemas/
-#   Windows: %LOCALAPPDATA%\projector\schemas/
+#   macOS/Linux: ~/.local/share/spool/schemas/
+#   Windows: %LOCALAPPDATA%\spool\schemas/
 
 # Step 2: Create directory structure
-mkdir -p ~/.local/share/projector/schemas/my-workflow/templates
+mkdir -p ~/.local/share/spool/schemas/my-workflow/templates
 
 # Step 3: Find the npm package to copy defaults
-npm list -g projector --parseable
+npm list -g spool --parseable
 # Output varies by package manager:
-#   npm: /usr/local/lib/node_modules/projector
-#   pnpm: ~/.local/share/pnpm/global/5/node_modules/projector
-#   volta: ~/.volta/tools/image/packages/projector/...
-#   yarn: ~/.config/yarn/global/node_modules/projector
+#   npm: /usr/local/lib/node_modules/spool
+#   pnpm: ~/.local/share/pnpm/global/5/node_modules/spool
+#   volta: ~/.volta/tools/image/packages/spool/...
+#   yarn: ~/.config/yarn/global/node_modules/spool
 
 # Step 4: Copy files
 cp -r <package-path>/schemas/spec-driven/* \
-      ~/.local/share/projector/schemas/my-workflow/
+      ~/.local/share/spool/schemas/my-workflow/
 
 # Step 5: Edit schema.yaml and templates
 # No way to verify override is active
@@ -91,7 +91,7 @@ cp -r <package-path>/schemas/spec-driven/* \
 - Must know XDG path conventions
 - Finding npm package path varies by install method
 - No tooling to scaffold or verify
-- No diff capability when upgrading projector
+- No diff capability when upgrading spool
 
 ---
 
@@ -129,7 +129,7 @@ cp -r <package-path>/schemas/spec-driven/* \
 ### New File Structure
 
 ```
-projector/
+spool/
 ├── config.yaml                 # Project config (NEW)
 ├── schemas/                    # Project-local schemas (NEW)
 │   └── my-workflow/
@@ -148,7 +148,7 @@ projector/
 ### config.yaml (Project Config)
 
 ```yaml
-# projector/config.yaml
+# spool/config.yaml
 defaultSchema: spec-driven
 ```
 
@@ -159,19 +159,19 @@ Sets the project-wide default schema. Used when:
 ### change.yaml (Change Metadata)
 
 ```yaml
-# projector/changes/add-auth/change.yaml
+# spool/changes/add-auth/change.yaml
 schema: tdd
 created: 2025-01-15T10:30:00Z
 description: Add user authentication system
 ```
 
-Binds a specific schema to a change. Created automatically by `projector new change`.
+Binds a specific schema to a change. Created automatically by `spool new change`.
 
 ### Schema Resolution Order
 
 ```
-1. ./projector/schemas/<name>/                    # Project-local
-2. ~/.local/share/projector/schemas/<name>/       # User global (XDG)
+1. ./spool/schemas/<name>/                    # Project-local
+2. ~/.local/share/spool/schemas/<name>/       # User global (XDG)
 3. <npm-package>/schemas/<name>/                 # Built-in
 ```
 
@@ -182,7 +182,7 @@ Project-local takes priority, enabling version-controlled custom schemas.
 ```
 1. --schema CLI flag                    # Explicit override
 2. change.yaml in change directory      # Change-specific binding
-3. projector/config.yaml defaultSchema   # Project default
+3. spool/config.yaml defaultSchema   # Project default
 4. "spec-driven"                        # Hardcoded fallback
 ```
 
@@ -194,13 +194,13 @@ Project-local takes priority, enabling version-controlled custom schemas.
 
 ```bash
 # Uses project default (from config.yaml, or spec-driven)
-projector new change add-auth
-# Creates projector/changes/add-auth/change.yaml:
+spool new change add-auth
+# Creates spool/changes/add-auth/change.yaml:
 #   schema: spec-driven
 #   created: 2025-01-15T10:30:00Z
 
 # Explicit schema for this change
-projector new change add-auth --schema tdd
+spool new change add-auth --schema tdd
 # Creates change.yaml with schema: tdd
 ```
 
@@ -208,12 +208,12 @@ projector new change add-auth --schema tdd
 
 ```bash
 # Auto-reads schema from change.yaml — no --schema needed
-projector status --change add-auth
+spool status --change add-auth
 # Output: "Change: add-auth (schema: tdd)"
 # Shows which artifacts are ready/blocked/done
 
 # Explicit override still works (with informational message)
-projector status --change add-auth --schema spec-driven
+spool status --change add-auth --schema spec-driven
 # "Note: change.yaml specifies 'tdd', using 'spec-driven' per --schema flag"
 ```
 
@@ -221,7 +221,7 @@ projector status --change add-auth --schema spec-driven
 
 ```bash
 # See what's available
-projector schema list
+spool schema list
 # Built-in:
 #   spec-driven    proposal → specs → design → tasks
 #   tdd            spec → tests → implementation → docs
@@ -229,39 +229,39 @@ projector schema list
 # User: (none)
 
 # Copy to project for customization
-projector schema copy spec-driven my-workflow
-# Created ./projector/schemas/my-workflow/
+spool schema copy spec-driven my-workflow
+# Created ./spool/schemas/my-workflow/
 # Edit schema.yaml and templates/ to customize
 
 # Copy to global (user-level override)
-projector schema copy spec-driven --global
-# Created ~/.local/share/projector/schemas/spec-driven/
+spool schema copy spec-driven --global
+# Created ~/.local/share/spool/schemas/spec-driven/
 
 # See where a schema resolves from
-projector schema which spec-driven
-# ./projector/schemas/spec-driven/ (project)
-# or: ~/.local/share/projector/schemas/spec-driven/ (user)
-# or: /usr/local/lib/node_modules/projector/schemas/spec-driven/ (built-in)
+spool schema which spec-driven
+# ./spool/schemas/spec-driven/ (project)
+# or: ~/.local/share/spool/schemas/spec-driven/ (user)
+# or: /usr/local/lib/node_modules/spool/schemas/spec-driven/ (built-in)
 
 # Compare override with built-in
-projector schema diff spec-driven
+spool schema diff spec-driven
 # Shows diff between user/project version and package built-in
 
 # Remove override, revert to built-in
-projector schema reset spec-driven
-# Removes ./projector/schemas/spec-driven/ (or --global for user dir)
+spool schema reset spec-driven
+# Removes ./spool/schemas/spec-driven/ (or --global for user dir)
 ```
 
 ### Project Setup
 
 ```bash
-projector init
+spool init
 # ? Select default workflow schema:
 #   > spec-driven (proposal → specs → design → tasks)
 #     tdd (spec → tests → implementation → docs)
 #     (custom schemas if detected)
 #
-# Writes to projector/config.yaml:
+# Writes to spool/config.yaml:
 #   defaultSchema: spec-driven
 ```
 
@@ -275,7 +275,7 @@ projector init
 **Solves:** "Forgot --schema", lost context, wrong results
 
 **Scope:**
-- Create `change.yaml` when running `projector new change`
+- Create `change.yaml` when running `spool new change`
 - Store `schema`, `created` timestamp
 - Modify workflow commands to read schema from `change.yaml`
 - `--schema` flag overrides (with informational message)
@@ -290,7 +290,7 @@ created: 2025-01-15T10:30:00Z
 **Migration:**
 - Existing changes without `change.yaml` continue to work
 - Default to `spec-driven` (current behavior)
-- Optional: `projector migrate` to add `change.yaml` to existing changes
+- Optional: `spool migrate` to add `change.yaml` to existing changes
 
 ---
 
@@ -300,15 +300,15 @@ created: 2025-01-15T10:30:00Z
 **Solves:** Team sharing, version control, no XDG knowledge needed
 
 **Scope:**
-- Add `./projector/schemas/` to resolution order (first priority)
-- `projector schema copy <name> [new-name]` creates in project by default
+- Add `./spool/schemas/` to resolution order (first priority)
+- `spool schema copy <name> [new-name]` creates in project by default
 - `--global` flag for user-level XDG directory
-- Teams can commit `projector/schemas/` to repo
+- Teams can commit `spool/schemas/` to repo
 
 **Resolution order:**
 ```
-1. ./projector/schemas/<name>/           # Project-local (NEW)
-2. ~/.local/share/projector/schemas/<name>/  # User global
+1. ./spool/schemas/<name>/           # Project-local (NEW)
+2. ~/.local/share/spool/schemas/<name>/  # User global
 3. <npm-package>/schemas/<name>/        # Built-in
 ```
 
@@ -321,12 +321,12 @@ created: 2025-01-15T10:30:00Z
 
 **Commands:**
 ```bash
-projector schema list              # Show available schemas with sources
-projector schema which <name>      # Show resolution path
-projector schema copy <name> [to]  # Copy for customization
-projector schema diff <name>       # Compare with built-in
-projector schema reset <name>      # Remove override
-projector schema validate <name>   # Validate schema.yaml structure
+spool schema list              # Show available schemas with sources
+spool schema which <name>      # Show resolution path
+spool schema copy <name> [to]  # Copy for customization
+spool schema diff <name>       # Compare with built-in
+spool schema reset <name>      # Remove override
+spool schema validate <name>   # Validate schema.yaml structure
 ```
 
 ---
@@ -337,8 +337,8 @@ projector schema validate <name>   # Validate schema.yaml structure
 **Solves:** Project-wide defaults, streamlined setup
 
 **Scope:**
-- Add `projector/config.yaml` with `defaultSchema` field
-- `projector init` prompts for schema selection
+- Add `spool/config.yaml` with `defaultSchema` field
+- `spool init` prompts for schema selection
 - Store selection in `config.yaml`
 - Commands use as fallback when no `change.yaml` exists
 

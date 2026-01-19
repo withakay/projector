@@ -1,10 +1,10 @@
-# Projector Agent Architecture Proposal
+# Spool Agent Architecture Proposal
 
 > Tool-agnostic agent system with configurable models, context sizes, and prompts
 
 ## Overview
 
-This proposal defines an agent architecture for Projector that:
+This proposal defines an agent architecture for Spool that:
 - Works across **OpenCode**, **Codex CLI**, **Claude Code**, and other AI tools
 - Uses **file-based configuration** for models, context sizes, and prompts
 - Supports **any AI model** (Claude, GPT, Gemini, Llama, etc.)
@@ -30,10 +30,10 @@ All coordination happens through files, not tool-specific APIs.
 
 ### Master Configuration File
 
-**`projector/config.yaml`** (or `config.json`)
+**`spool/config.yaml`** (or `config.json`)
 
 ```yaml
-# Projector Agent Configuration
+# Spool Agent Configuration
 # Configures models, context sizes, and behavior for different AI tools
 
 version: "1.0"
@@ -126,13 +126,13 @@ context_strategy:
 
   # Files always loaded (if they exist)
   always_include:
-    - "projector/planning/STATE.md"
-    - "projector/planning/PROJECT.md"
+    - "spool/planning/STATE.md"
+    - "spool/planning/PROJECT.md"
 
   # Files to prioritize when space is limited
   priority_files:
-    - "projector/planning/ROADMAP.md"
-    - "projector/research/SUMMARY.md"
+    - "spool/planning/ROADMAP.md"
+    - "spool/research/SUMMARY.md"
 ```
 
 ### Environment-Based Overrides
@@ -141,13 +141,13 @@ Support environment variables for CI/CD and different setups:
 
 ```bash
 # Override model for all agents
-export PROJECTOR_MODEL="gpt-4o"
+export SPOOL_MODEL="gpt-4o"
 
 # Override context budget
-export PROJECTOR_CONTEXT_BUDGET=32000
+export SPOOL_CONTEXT_BUDGET=32000
 
 # Force specific tool behavior
-export PROJECTOR_TOOL="opencode"
+export SPOOL_TOOL="opencode"
 ```
 
 ---
@@ -159,7 +159,7 @@ Agents are defined as markdown prompt files with YAML frontmatter for configurat
 ### Agent File Structure
 
 ```
-projector/
+spool/
 ├── agents/                      # Agent prompt definitions
 │   ├── research/
 │   │   ├── stack-researcher.md
@@ -183,7 +183,7 @@ projector/
 
 ### Agent Prompt Format
 
-**`projector/agents/research/stack-researcher.md`**
+**`spool/agents/research/stack-researcher.md`**
 
 ```markdown
 ---
@@ -202,14 +202,14 @@ requires:
 # Input files (loaded into context)
 inputs:
   required:
-    - "projector/planning/PROJECT.md"
+    - "spool/planning/PROJECT.md"
   optional:
-    - "projector/planning/STATE.md"
-    - "projector/research/SUMMARY.md"
+    - "spool/planning/STATE.md"
+    - "spool/research/SUMMARY.md"
 
 # Output specification
 outputs:
-  file: "projector/research/investigations/stack-analysis.md"
+  file: "spool/research/investigations/stack-analysis.md"
   append: false
 ---
 
@@ -285,7 +285,7 @@ Rationale: [Why this is the best fit]
 
 ### Agent with Model Override
 
-**`projector/agents/review/security-adversary.md`**
+**`spool/agents/review/security-adversary.md`**
 
 ```markdown
 ---
@@ -300,13 +300,13 @@ requires:
 
 inputs:
   required:
-    - "projector/changes/{change_id}/proposal.md"
-    - "projector/changes/{change_id}/specs/**/*.md"
+    - "spool/changes/{change_id}/proposal.md"
+    - "spool/changes/{change_id}/specs/**/*.md"
   optional:
-    - "projector/specs/**/*.md"  # Existing specs for context
+    - "spool/specs/**/*.md"  # Existing specs for context
 
 outputs:
-  file: "projector/changes/{change_id}/REVIEW.md"
+  file: "spool/changes/{change_id}/REVIEW.md"
   append: true                   # Multiple reviewers append to same file
   section: "## Security Review"
 ---
@@ -529,7 +529,7 @@ steps:
 
 Workflows orchestrate multiple agents:
 
-**`projector/workflows/research.yaml`**
+**`spool/workflows/research.yaml`**
 
 ```yaml
 name: research
@@ -553,21 +553,21 @@ waves:
       - synthesizer
     inputs:
       # Explicitly pass outputs from wave 1
-      - "projector/research/investigations/*.md"
+      - "spool/research/investigations/*.md"
 
 outputs:
-  - "projector/research/SUMMARY.md"
+  - "spool/research/SUMMARY.md"
 
 on_complete:
-  - update: "projector/planning/STATE.md"
+  - update: "spool/planning/STATE.md"
     action: append
     content: |
       ### Research Complete
       - Completed: {date}
-      - See: projector/research/SUMMARY.md
+      - See: spool/research/SUMMARY.md
 ```
 
-**`projector/workflows/review.yaml`**
+**`spool/workflows/review.yaml`**
 
 ```yaml
 name: adversarial-review
@@ -592,7 +592,7 @@ waves:
       - review-synthesizer
 
 outputs:
-  - "projector/changes/{change_id}/REVIEW.md"
+  - "spool/changes/{change_id}/REVIEW.md"
 
 # Gate: block implementation if high severity issues
 gate:
@@ -608,13 +608,13 @@ gate:
 
 ```bash
 # Copy agents to OpenCode commands directory
-cp -r projector/agents .opencode/commands/projector-agents
+cp -r spool/agents .opencode/commands/spool-agents
 
 # Copy workflows
-cp -r projector/workflows .opencode/workflows
+cp -r spool/workflows .opencode/workflows
 
 # Run a workflow
-/projector-agents/research/stack-researcher "authentication"
+/spool-agents/research/stack-researcher "authentication"
 
 # Or run full workflow
 /workflows/research
@@ -625,7 +625,7 @@ OpenCode config (`.opencode/config.yaml`):
 commands:
   directories:
     - .opencode/commands
-    - projector/agents          # Direct access to agents
+    - spool/agents          # Direct access to agents
 
 # Model configuration
 models:
@@ -640,31 +640,31 @@ models:
 
 ```bash
 # Load agent as context
-codex --context @projector/agents/research/stack-researcher.md \
+codex --context @spool/agents/research/stack-researcher.md \
       "Research authentication stack options"
 
 # Or use the prompt directly
-codex "$(cat projector/agents/research/stack-researcher.md)"
+codex "$(cat spool/agents/research/stack-researcher.md)"
 ```
 
 ### Claude Code Integration
 
 ```bash
 # Use as slash command
-/projector:research stack
+/spool:research stack
 
 # Or reference in conversation
-"Follow the agent prompt in projector/agents/research/stack-researcher.md"
+"Follow the agent prompt in spool/agents/research/stack-researcher.md"
 ```
 
 CLAUDE.md integration:
 ```markdown
 ## Custom Commands
 
-### /projector:research [type]
+### /spool:research [type]
 Execute research agent. Types: stack, features, architecture, pitfalls, all
 
-### /projector:review [change-id]
+### /spool:review [change-id]
 Run adversarial review on change proposal.
 ```
 
@@ -672,28 +672,28 @@ Run adversarial review on change proposal.
 
 ## CLI Commands
 
-The `projector` CLI manages configuration and workflows:
+The `spool` CLI manages configuration and workflows:
 
 ```bash
 # Configuration
-projector config show                    # Display current config
-projector config set defaults.model gpt-4o
-projector config set agents.research.context_budget 40000
+spool config show                    # Display current config
+spool config set defaults.model gpt-4o
+spool config set agents.research.context_budget 40000
 
 # Agent management
-projector agent list                     # List available agents
-projector agent show security-adversary  # View agent details
-projector agent run stack-researcher     # Run single agent
-projector agent run stack-researcher --model gpt-4o  # Override model
+spool agent list                     # List available agents
+spool agent show security-adversary  # View agent details
+spool agent run stack-researcher     # Run single agent
+spool agent run stack-researcher --model gpt-4o  # Override model
 
 # Workflow execution
-projector workflow list                  # List workflows
-projector workflow run research          # Run research workflow
-projector workflow run review --change-id add-auth  # With parameters
+spool workflow list                  # List workflows
+spool workflow run research          # Run research workflow
+spool workflow run review --change-id add-auth  # With parameters
 
 # Context analysis
-projector context estimate research      # Estimate context usage
-projector context check stack-researcher # Verify fits in budget
+spool context estimate research      # Estimate context usage
+spool context check stack-researcher # Verify fits in budget
 ```
 
 ---
@@ -703,7 +703,7 @@ projector context check stack-researcher # Verify fits in budget
 ### Minimal Setup (Defaults)
 
 ```yaml
-# projector/config.yaml
+# spool/config.yaml
 version: "1.0"
 defaults:
   model: "auto"

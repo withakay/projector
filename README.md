@@ -1,9 +1,9 @@
 <p align="center">
-  <a href="https://github.com/withakay/Projector">
+  <a href="https://github.com/withakay/Spool">
     <picture>
-      <source srcset="assets/projector_pixel_dark.svg" media="(prefers-color-scheme: dark)">
-      <source srcset="assets/projector_pixel_light.svg" media="(prefers-color-scheme: light)">
-      <img src="assets/projector_pixel_light.svg" alt="Projector logo" height="64">
+      <source srcset="assets/spool_pixel_dark.svg" media="(prefers-color-scheme: dark)">
+      <source srcset="assets/spool_pixel_light.svg" media="(prefers-color-scheme: light)">
+      <img src="assets/spool_pixel_light.svg" alt="Spool logo" height="64">
     </picture>
   </a>
 </p>
@@ -11,15 +11,15 @@
 <p align="center">Project-centric spec + workflow system for long-running AI coding work.</p>
 
 <p align="center">
-  <a href="https://github.com/withakay/Projector/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/withakay/Projector/actions/workflows/ci.yml/badge.svg" /></a>
-  <a href="https://www.npmjs.com/package/@withakay/projector"><img alt="npm version" src="https://img.shields.io/npm/v/@withakay/projector?style=flat-square" /></a>
-  <a href="https://nodejs.org/"><img alt="node version" src="https://img.shields.io/node/v/@withakay/projector?style=flat-square" /></a>
+  <a href="https://github.com/withakay/Spool/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/withakay/Spool/actions/workflows/ci.yml/badge.svg" /></a>
+  <a href="https://www.npmjs.com/package/@withakay/spool"><img alt="npm version" src="https://img.shields.io/npm/v/@withakay/spool?style=flat-square" /></a>
+  <a href="https://nodejs.org/"><img alt="node version" src="https://img.shields.io/node/v/@withakay/spool?style=flat-square" /></a>
   <a href="./LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square" /></a>
 </p>
 
-# Projector
+# Spool
 
-Projector is a fork of **OpenSpec** that adds project-centric planning and an emphasis on **long-running, multi-agent tasks**.
+Spool is a fork of **OpenSpec** that adds project-centric planning and an emphasis on **long-running, multi-agent tasks**.
 
 It’s designed for the reality of AI-assisted development where work spans multiple sessions, needs explicit verification criteria, and benefits from parallel subagents. The approach draws inspiration from Kiro, Beads, Loom, and GSD-style execution.
 
@@ -31,7 +31,7 @@ It’s designed for the reality of AI-assisted development where work spans mult
 - Agent configuration: per-tool models + context budgets (`config.yaml`)
 - Workflow orchestration: YAML workflows with waves + checkpoints, plus execution status tracking
 - Unified “research” and “adversarial review” workflows available as slash commands in supported tools
-- Projector agent skills installed automatically during init
+- Spool agent skills installed automatically during init
 
 ## Quick Start
 
@@ -42,28 +42,28 @@ It’s designed for the reality of AI-assisted development where work spans mult
 ### Install
 
 ```bash
-npm install -g @withakay/projector@latest
-projector --version
+npm install -g @withakay/spool@latest
+spool --version
 ```
 
 ### Initialize In A Repo
 
 ```bash
-projector init
+spool init
 ```
 
-This creates Projector’s working directory (default: `.projector/`), installs Projector agent skills, and generates slash commands for the selected supported tools.
+This creates Spool’s working directory (default: `.spool/`), installs Spool agent skills, and generates slash commands for the selected supported tools.
 
-Note: older docs (and some templates) may refer to `projector/` as the working directory. In this fork, the default is `.projector/`, and the directory name can be customized via `projector.json`.
+Note: older docs (and some templates) may refer to `spool/` as the working directory. In this fork, the default is `.spool/`, and the directory name can be customized via `spool.json`.
 
-Projector agent skills are installed to `.claude/skills/<skill>/SKILL.md` so supported assistants can load the authoritative instructions.
+Spool agent skills are installed to `.claude/skills/<skill>/SKILL.md` so supported assistants can load the authoritative instructions.
 
 ## On-Disk Layout
 
-After `projector init`, you’ll typically have (default layout shown):
+After `spool init`, you’ll typically have (default layout shown):
 
 ```text
-.projector/
+.spool/
   AGENTS.md
   project.md
   planning/
@@ -97,21 +97,21 @@ After `projector init`, you’ll typically have (default layout shown):
 
 ## Core Workflows
 
-### 1) Project Planning (`projector plan`)
+### 1) Project Planning (`spool plan`)
 
-Project planning lives in `.projector/planning/` and is intended to survive across sessions.
+Project planning lives in `.spool/planning/` and is intended to survive across sessions.
 
 ```bash
-projector plan init
-projector plan status
-projector state show
+spool plan init
+spool plan status
+spool state show
 ```
 
 - `PROJECT.md`: project vision, constraints, conventions
 - `ROADMAP.md`: phases/milestones
 - `STATE.md`: current focus, decisions, blockers, session notes
 
-### 2) Research Phase (`/projector … research`)
+### 2) Research Phase (`/spool … research`)
 
 Research is meant to happen *before* proposing changes, especially when you’re entering an unfamiliar domain.
 
@@ -122,11 +122,11 @@ The built-in research workflow runs in parallel:
 - architecture
 - pitfalls
 
-…and then synthesizes results into `.projector/research/SUMMARY.md`.
+…and then synthesizes results into `.spool/research/SUMMARY.md`.
 
-### 3) Change Execution With Enhanced Tasks (`projector tasks`)
+### 3) Change Execution With Enhanced Tasks (`spool tasks`)
 
-Projector supports an “enhanced tasks.md” format that is optimized for long-running work:
+Spool supports an “enhanced tasks.md” format that is optimized for long-running work:
 
 - waves (grouping and parallelizable chunks)
 - explicit `Verify` commands
@@ -134,14 +134,14 @@ Projector supports an “enhanced tasks.md” format that is optimized for long-
 - task status tracking (pending / in-progress / complete)
 
 ```bash
-projector tasks init <change-id>
-projector tasks status <change-id>
-projector tasks start <change-id> <task-id>
-projector tasks complete <change-id> <task-id>
-projector tasks next <change-id>
+spool tasks init <change-id>
+spool tasks status <change-id>
+spool tasks start <change-id> <task-id>
+spool tasks complete <change-id> <task-id>
+spool tasks next <change-id>
 ```
 
-### 4) Adversarial Review (`/projector … review`)
+### 4) Adversarial Review (`/spool … review`)
 
 Adversarial review is multi-perspective by default:
 
@@ -151,56 +151,56 @@ Adversarial review is multi-perspective by default:
 
 Outputs are written into the change folder under `reviews/`.
 
-### 5) Workflow Orchestration (`projector workflow`)
+### 5) Workflow Orchestration (`spool workflow`)
 
 Workflows are YAML files with waves, tasks, and optional checkpoints.
 
 ```bash
-projector workflow init
-projector workflow list
-projector workflow show research
-projector workflow run research --tool opencode -v topic="your topic"
-projector workflow status research
+spool workflow init
+spool workflow list
+spool workflow show research
+spool workflow run research --tool opencode -v topic="your topic"
+spool workflow status research
 ```
 
-This generates tool-specific execution instructions (OpenCode / Claude Code / Codex) and tracks progress in `.projector/workflows/.state/`.
+This generates tool-specific execution instructions (OpenCode / Claude Code / Codex) and tracks progress in `.spool/workflows/.state/`.
 
-## Agent Configuration (`projector agent-config`)
+## Agent Configuration (`spool agent-config`)
 
-Projector can generate and manage `.projector/config.yaml` for per-tool model selection and context budgets.
+Spool can generate and manage `.spool/config.yaml` for per-tool model selection and context budgets.
 
 ```bash
-projector agent-config init
-projector agent-config summary
-projector agent-config get tools.opencode.default_model
-projector agent-config set agents.review.model_preference powerful
+spool agent-config init
+spool agent-config summary
+spool agent-config get tools.opencode.default_model
+spool agent-config set agents.review.model_preference powerful
 ```
 
 ## Slash Commands (Where Supported)
 
-Projector installs slash commands for tools that support them.
+Spool installs slash commands for tools that support them.
 
-- Claude Code (namespace style): `/projector:proposal`, `/projector:apply`, `/projector:archive`, `/projector:research`, `/projector:review`
-- OpenCode / Codex (hyphen style): `/projector-proposal`, `/projector-apply`, `/projector-archive`, `/projector-research`, `/projector-review`
+- Claude Code (namespace style): `/spool:proposal`, `/spool:apply`, `/spool:archive`, `/spool:research`, `/spool:review`
+- OpenCode / Codex (hyphen style): `/spool-proposal`, `/spool-apply`, `/spool-archive`, `/spool-research`, `/spool-review`
 
-Exact availability depends on which tools you selected during `projector init`.
+Exact availability depends on which tools you selected during `spool init`.
 
 ## Command Reference (Common)
 
 ```bash
-projector init
-projector update
-projector list
-projector list --specs
-projector show <change-or-spec>
-projector validate [item]
-projector archive <change-id> -y
+spool init
+spool update
+spool list
+spool list --specs
+spool show <change-or-spec>
+spool validate [item]
+spool archive <change-id> -y
 ```
 
 ## Test Plan
 
-- [ ] Run `projector init` and verify `.projector/planning/` + `.projector/research/` templates exist
-- [ ] Run `projector workflow init` and verify `.projector/workflows/*.yaml` are created
+- [ ] Run `spool init` and verify `.spool/planning/` + `.spool/research/` templates exist
+- [ ] Run `spool workflow init` and verify `.spool/workflows/*.yaml` are created
 - [ ] Verify research and review slash commands are available in at least one supported tool
 - [ ] Run `pnpm run build` (or `npm run build`) to verify TypeScript compilation
 

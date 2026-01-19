@@ -2,30 +2,30 @@
 
 ## Audit Overview
 
-Successfully audited and fixed all hardcoded 'projector/' paths in command templates, frontmatter, and harness configurators to use configurable `projectorDir` (default `.projector`).
+Successfully audited and fixed all hardcoded 'spool/' paths in command templates, frontmatter, and harness configurators to use configurable `spoolDir` (default `.spool`).
 
 ## Issues Found and Fixed
 
 ### 1. Slash Command Templates
-**Issue**: Hardcoded `projector/` paths in slash command templates  
+**Issue**: Hardcoded `spool/` paths in slash command templates  
 **Status**: ✅ FIXED
 **Files**: `src/core/templates/slash-command-templates.ts`
 **Solution**: Already had replacement function, updated to use new utility
 
 ### 2. Skill Templates  
-**Issue**: Hardcoded `.projector/` paths in skill templates  
+**Issue**: Hardcoded `.spool/` paths in skill templates  
 **Status**: ✅ FIXED  
 **Files**: `src/core/templates/skill-templates.ts`  
-**Solution**: Updated all skill template functions to accept `projectorDir` parameter and apply path replacement
+**Solution**: Updated all skill template functions to accept `spoolDir` parameter and apply path replacement
 
 ### 3. Planning Templates
-**Issue**: Hardcoded `projector/` path in state template  
+**Issue**: Hardcoded `spool/` path in state template  
 **Status**: ✅ FIXED  
 **Files**: `src/core/templates/planning-templates.ts`  
-**Solution**: Updated to use `context.projectorDir` variable
+**Solution**: Updated to use `context.spoolDir` variable
 
 ### 4. Agents Template
-**Issue**: Already using context.projectorDir correctly  
+**Issue**: Already using context.spoolDir correctly  
 **Status**: ✅ ALREADY CORRECT  
 **Files**: `src/core/templates/agents-template.ts`
 
@@ -33,13 +33,13 @@ Successfully audited and fixed all hardcoded 'projector/' paths in command templ
 **Issue**: Some hardcoded paths in command prompts  
 **Status**: ✅ FIXED  
 **Files**: `src/core/templates/command-templates.ts`  
-**Solution**: Updated TemplateManager to provide projectorDir context
+**Solution**: Updated TemplateManager to provide spoolDir context
 
 ### 6. Skills Configurator
-**Issue**: Not passing projectorDir to template functions  
+**Issue**: Not passing spoolDir to template functions  
 **Status**: ✅ FIXED  
 **Files**: `src/core/configurators/skills.ts`  
-**Solution**: Updated to pass projectorDir and apply path replacement
+**Solution**: Updated to pass spoolDir and apply path replacement
 
 ### 7. OpenCode Configurator
 **Issue**: Manual path replacement implementation  
@@ -52,25 +52,25 @@ Successfully audited and fixed all hardcoded 'projector/' paths in command templ
 ### New Path Normalization Utility
 Created `src/utils/path-normalization.ts` with three key functions:
 
-1. **normalizeProjectorDir()** - Ensures directory starts with dot
-2. **replaceHardcodedProjectorPaths()** - Replaces `projector/` → configured directory  
-3. **replaceHardcodedDotProjectorPaths()** - Replaces `.projector/` → configured directory
+1. **normalizeSpoolDir()** - Ensures directory starts with dot
+2. **replaceHardcodedSpoolPaths()** - Replaces `spool/` → configured directory  
+3. **replaceHardcodedDotSpoolPaths()** - Replaces `.spool/` → configured directory
 
 ### Updated Template Functions
 All skill template functions now:
-- Accept `projectorDir` parameter (default: `.projector`)
-- Apply path replacement using `replaceHardcodedDotProjectorPaths()`
+- Accept `spoolDir` parameter (default: `.spool`)
+- Apply path replacement using `replaceHardcodedDotSpoolPaths()`
 - Maintain backward compatibility
 
 ### Updated Configurators
 All configurators now:
-- Accept and pass `projectorDir` parameter
+- Accept and pass `spoolDir` parameter
 - Apply consistent path replacement
 - Generate properly configured templates
 
 ### Enhanced TemplateManager
 Updated to:
-- Provide `projectorDir` context to command templates
+- Provide `spoolDir` context to command templates
 - Apply path replacement automatically
 - Ensure consistent behavior across all template types
 
@@ -82,24 +82,24 @@ Updated to:
 
 ### 2. Skill Template Tests  
 **File**: `test/core/templates/skill-templates.test.ts`
-**Coverage**: Template path replacement with custom projectorDir
+**Coverage**: Template path replacement with custom spoolDir
 
 ### 3. Skills Configurator Tests  
-**File**: `test/core/configurators/skills-projectordir.test.ts`
-**Coverage**: End-to-end flow with custom projector directory
+**File**: `test/core/configurators/skills-spooldir.test.ts`
+**Coverage**: End-to-end flow with custom spool directory
 
 ## Verification
 
 ### All Tests Passing
 - ✅ 28/28 tests pass
 - ✅ No regressions in existing functionality
-- ✅ Custom projectorDir works correctly
-- ✅ Default `.projector` still works
+- ✅ Custom spoolDir works correctly
+- ✅ Default `.spool` still works
 
 ### Backward Compatibility
 - ✅ All existing APIs preserved
-- ✅ Default behavior unchanged when no projectorDir specified
-- ✅ Custom projectorDir adds dot prefix automatically
+- ✅ Default behavior unchanged when no spoolDir specified
+- ✅ Custom spoolDir adds dot prefix automatically
 
 ## Files Modified
 
@@ -109,17 +109,17 @@ Updated to:
 4. **src/core/templates/skill-templates.ts** - Updated all functions
 5. **src/core/templates/planning-templates.ts** - Updated state template
 6. **src/core/templates/index.ts** - Updated command template context
-7. **src/core/configurators/skills.ts** - Updated to pass projectorDir
+7. **src/core/configurators/skills.ts** - Updated to pass spoolDir
 8. **src/core/configurators/slash/opencode.ts** - Updated to use utility
 9. **Test files** - 4 new comprehensive test files
 
 ## Impact
 
 This audit ensures that:
-- Users can configure custom Projector directory names
+- Users can configure custom Spool directory names
 - All templates respect the configured directory
 - Generated content uses correct paths
 - No hardcoded paths remain in the codebase
 - Full backward compatibility maintained
 
-The implementation follows Projector's existing patterns and integrates seamlessly with the current configuration system.
+The implementation follows Spool's existing patterns and integrates seamlessly with the current configuration system.
