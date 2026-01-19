@@ -10,3 +10,10 @@ export {
   validateSchemaName,
   ChangeMetadataError,
 } from './change-metadata.js';
+
+// Path normalization utilities
+export {
+  normalizeProjectorDir,
+  replaceHardcodedProjectorPaths,
+  replaceHardcodedDotProjectorPaths,
+} from './path-normalization.js';

@@ -1,3 +1,5 @@
+import { replaceHardcodedProjectorPaths } from '../../utils/path-normalization.js';
+
 // Core commands that all tools support
 export type CoreSlashCommandId = 'proposal' | 'apply' | 'archive';
 
@@ -269,6 +271,11 @@ export const slashCommandBodies: Record<SlashCommandId, string> = {
   'review-edge': reviewEdgeBody,
 };
 
-export function getSlashCommandBody(id: SlashCommandId): string {
-  return slashCommandBodies[id];
+export function getSlashCommandBody(id: SlashCommandId, projectorDir: string = '.projector'): string {
+  let body = slashCommandBodies[id];
+  
+  // Replace hardcoded 'projector/' paths with the configured projectorDir
+  body = replaceHardcodedProjectorPaths(body, projectorDir);
+  
+  return body;
 }

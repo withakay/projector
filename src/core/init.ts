@@ -92,9 +92,10 @@ type ToolSelectionPrompt = (config: ToolWizardConfig) => Promise<string[]>;
 
 type RootStubStatus = 'created' | 'updated' | 'skipped';
 
-const ROOT_STUB_CHOICE_VALUE = '__root_stub__';
 
 const OTHER_TOOLS_HEADING_VALUE = '__heading-other__';
+
+const UNIVERSAL_AGENTS_MD_INFO_VALUE = '__info-universal__';
 const LIST_SPACER_VALUE = '__list-spacer__';
 
 const toolSelectionWizard = createPrompt<string[], ToolWizardConfig>(
@@ -246,12 +247,10 @@ const toolSelectionWizard = createPrompt<string[], ToolWizardConfig>(
 
       if (step === 'review') {
         if (isEnterKey(key)) {
-          const finalSelection = config.choices
-            .map((choice) => choice.value)
-            .filter(
-              (value) =>
-                selectedSet.has(value) && value !== ROOT_STUB_CHOICE_VALUE
-            );
+           const finalSelection = config.choices
+             .map((choice) => choice.value)
+             .filter((value) => selectedSet.has(value));
+
           done(finalSelection);
           return;
         }
@@ -263,17 +262,16 @@ const toolSelectionWizard = createPrompt<string[], ToolWizardConfig>(
       }
     });
 
-    const rootStubChoice = selectableChoices.find(
-      (choice) => choice.value === ROOT_STUB_CHOICE_VALUE
+
+    
+    // Filter choices by category
+    const nonHeadingChoices = selectableChoices.filter(
+      (choice) => choice.value !== '__heading-native__' && choice.value !== '__heading-other__'
     );
-    const rootStubSelected = rootStubChoice
-      ? selectedSet.has(ROOT_STUB_CHOICE_VALUE)
-      : false;
-    const nativeChoices = selectableChoices.filter(
-      (choice) => choice.value !== ROOT_STUB_CHOICE_VALUE
-    );
-    const selectedNativeChoices = nativeChoices.filter((choice) =>
-      selectedSet.has(choice.value)
+    
+        
+    const selectedNativeToolChoices = nonHeadingChoices.filter((choice) =>
+      selectedSet.has(choice.value) && !choice.value.startsWith('projector-')
     );
 
     const formatSummaryLabel = (
@@ -316,52 +314,34 @@ const toolSelectionWizard = createPrompt<string[], ToolWizardConfig>(
       lines.push(page);
       lines.push('');
       lines.push(PALETTE.midGray('Selected configuration:'));
-      if (rootStubSelected && rootStubChoice) {
-        lines.push(
-          `  ${PALETTE.white('-')} ${formatSummaryLabel(rootStubChoice)}`
-        );
-      }
-      if (selectedNativeChoices.length === 0) {
-        lines.push(
-          `  ${PALETTE.midGray('- No natively supported providers selected')}`
-        );
-      } else {
-        selectedNativeChoices.forEach((choice) => {
+       if (selectedNativeToolChoices.length > 0) {
+
+        for (const choice of selectedNativeToolChoices) {
           lines.push(
             `  ${PALETTE.white('-')} ${formatSummaryLabel(choice)}`
           );
-        });
+        }
       }
-    } else {
+    } else if (step === 'review') {
       lines.push(PALETTE.white('Review selections'));
       lines.push(
         PALETTE.midGray('Press Enter to confirm or Backspace to adjust.')
       );
       lines.push('');
-
-      if (rootStubSelected && rootStubChoice) {
-        lines.push(
-          `${PALETTE.white('▌')} ${formatSummaryLabel(rootStubChoice)}`
-        );
-      }
-
-      if (selectedNativeChoices.length === 0) {
+      
+      // Show native tool selections if any
+      if (selectedNativeToolChoices.length > 0) {
+        lines.push(PALETTE.white('Natively supported providers:'));
+        for (const choice of selectedNativeToolChoices) {
+          lines.push(`  ${PALETTE.white('-')} ${formatSummaryLabel(choice)}`);
+        }
+      } else if (selectedNativeToolChoices.length === 0) {
         lines.push(
           PALETTE.midGray(
             'No natively supported providers selected. Universal instructions will still be applied.'
           )
         );
-      } else {
-        selectedNativeChoices.forEach((choice) => {
-          lines.push(
-            `${PALETTE.white('▌')} ${formatSummaryLabel(choice)}`
-          );
-        });
       }
-    }
-
-    if (error) {
-      return [lines.join('\n'), chalk.red(error)];
     }
 
     return lines.join('\n');
@@ -446,6 +426,15 @@ export class InitCommand {
       symbol: PALETTE.white('▌'),
       text: PALETTE.white('AI tools configured'),
     });
+
+     // Step 3: Install Projector skills (Agent Skills) as a core part of init
+     const skillsSpinner = this.startSpinner('Installing Projector skills...');
+     await this.installProjectorSkills(projectPath, projectorDir);
+     skillsSpinner.stopAndPersist({
+       symbol: PALETTE.white(''),
+       text: PALETTE.white('Projector skills installed'),
+     });
+
 
     // Success message
     this.displaySuccessMessage(
@@ -604,20 +593,17 @@ export class InitCommand {
         kind: 'heading',
         value: OTHER_TOOLS_HEADING_VALUE,
         label: {
-          primary:
-            'Other tools (use Universal AGENTS.md for Amp, VS Code, GitHub Copilot, …)',
+          primary: 'Universal (AGENTS.md stub always installed)',
         },
         selectable: false,
       },
       {
-        kind: 'option',
-        value: ROOT_STUB_CHOICE_VALUE,
+        kind: 'info',
+        value: UNIVERSAL_AGENTS_MD_INFO_VALUE,
         label: {
-          primary: 'Universal AGENTS.md',
-          annotation: 'always available',
+          primary: 'AGENTS.md is installed automatically; no selection needed.',
         },
-        configured: extendMode,
-        selectable: true,
+        selectable: false,
       },
     ];
 
@@ -814,6 +800,36 @@ export class InitCommand {
     }
 
     return rootStubStatus;
+  }
+
+  /**
+   * Configure Projector Skills if selected
+   */
+  private async installProjectorSkills(
+    projectPath: string,
+    projectorDir: string
+  ): Promise<void> {
+    const { SkillsConfigurator } = await import('./configurators/skills.js');
+    const configurator = new SkillsConfigurator();
+
+    const skillIds = configurator
+      .getAvailableSkills(projectorDir)
+      // drop experimental / opsx skills
+      .filter(
+        (skill) =>
+          ![
+            'projector-explore',
+            'projector-new-change',
+            'projector-continue-change',
+            'projector-apply-change',
+            'projector-ff-change',
+            'projector-sync-specs',
+            'projector-archive-change',
+          ].includes(skill.id)
+      )
+      .map((skill) => skill.id);
+
+    await configurator.installSkills(projectPath, projectorDir, skillIds);
   }
 
   private async configureRootAgentsStub(

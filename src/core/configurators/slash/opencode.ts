@@ -2,6 +2,7 @@ import { SlashCommandConfigurator, EXTENDED_COMMANDS } from "./base.js";
 import { SlashCommandId } from "../../templates/index.js";
 import { FileSystemUtils } from "../../../utils/file-system.js";
 import { PROJECTOR_MARKERS } from "../../config.js";
+import { replaceHardcodedProjectorPaths } from "../../../utils/path-normalization.js";
 
 const FILE_PATHS: Record<SlashCommandId, string> = {
   proposal: ".opencode/command/projector-proposal.md",
@@ -18,7 +19,7 @@ const FILE_PATHS: Record<SlashCommandId, string> = {
   'review-edge': ".opencode/command/projector-review-edge.md",
 };
 
-const FRONTMATTER: Record<SlashCommandId, string> = {
+const FRONTMATTER_TEMPLATES: Record<SlashCommandId, string> = {
   proposal: `---
 description: Scaffold a new Projector change and validate strictly.
 ---
@@ -128,33 +129,39 @@ export class OpenCodeSlashCommandConfigurator extends SlashCommandConfigurator {
     return FILE_PATHS[id];
   }
 
-  protected getFrontmatter(id: SlashCommandId): string | undefined {
-    return FRONTMATTER[id];
+  protected getFrontmatter(id: SlashCommandId, projectorDir: string = '.projector'): string | undefined {
+    const template = FRONTMATTER_TEMPLATES[id];
+    if (!template) {
+      return undefined;
+    }
+    
+    // Replace hardcoded 'projector/' paths with the configured projectorDir
+    return replaceHardcodedProjectorPaths(template, projectorDir);
   }
 
-  async generateAll(projectPath: string, _projectorDir: string): Promise<string[]> {
-    const createdOrUpdated = await super.generateAll(projectPath, _projectorDir);
-    await this.rewriteArchiveFile(projectPath);
+  async generateAll(projectPath: string, projectorDir: string): Promise<string[]> {
+    const createdOrUpdated = await super.generateAll(projectPath, projectorDir);
+    await this.rewriteArchiveFile(projectPath, projectorDir);
     return createdOrUpdated;
   }
 
-  async updateExisting(projectPath: string, _projectorDir: string): Promise<string[]> {
-    const updated = await super.updateExisting(projectPath, _projectorDir);
-    const rewroteArchive = await this.rewriteArchiveFile(projectPath);
+  async updateExisting(projectPath: string, projectorDir: string): Promise<string[]> {
+    const updated = await super.updateExisting(projectPath, projectorDir);
+    const rewroteArchive = await this.rewriteArchiveFile(projectPath, projectorDir);
     if (rewroteArchive && !updated.includes(FILE_PATHS.archive)) {
       updated.push(FILE_PATHS.archive);
     }
     return updated;
   }
 
-  private async rewriteArchiveFile(projectPath: string): Promise<boolean> {
+  private async rewriteArchiveFile(projectPath: string, projectorDir: string = '.projector'): Promise<boolean> {
     const archivePath = FileSystemUtils.joinPath(projectPath, FILE_PATHS.archive);
     if (!await FileSystemUtils.fileExists(archivePath)) {
       return false;
     }
 
-    const body = this.getBody("archive");
-    const frontmatter = this.getFrontmatter("archive");
+    const body = this.getBody("archive", projectorDir);
+    const frontmatter = this.getFrontmatter("archive", projectorDir);
     const sections: string[] = [];
 
     if (frontmatter) {

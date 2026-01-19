@@ -54,6 +54,7 @@ export interface AgentConfig {
     opencode?: ToolConfig;
     codex?: ToolConfig;
     'claude-code'?: ToolConfig;
+    'github-copilot'?: ToolConfig;
   };
   agents?: {
     research?: AgentCategoryConfig;
@@ -113,6 +114,19 @@ const DEFAULT_CONFIG: AgentConfig = {
         haiku: 200000,
         sonnet: 200000,
         opus: 200000,
+      },
+    },
+    'github-copilot': {
+      default_model: 'gpt-4o',
+      models: {
+        fast: 'gpt-4o-mini',
+        balanced: 'gpt-4o',
+        powerful: 'o1',
+      },
+      context_limits: {
+        'gpt-4o': 128000,
+        'gpt-4o-mini': 128000,
+        'o1': 200000,
       },
     },
   },
@@ -210,7 +224,7 @@ export class AgentConfigManager {
 
   getModelForAgent(
     config: AgentConfig,
-    tool: 'opencode' | 'codex' | 'claude-code',
+    tool: 'opencode' | 'codex' | 'claude-code' | 'github-copilot',
     agentCategory: 'research' | 'execution' | 'review' | 'planning'
   ): string {
     const agentConfig = config.agents?.[agentCategory];
@@ -226,7 +240,7 @@ export class AgentConfigManager {
 
   getContextBudget(
     config: AgentConfig,
-    tool: 'opencode' | 'codex' | 'claude-code',
+    tool: 'opencode' | 'codex' | 'claude-code' | 'github-copilot',
     agentCategory: 'research' | 'execution' | 'review' | 'planning'
   ): number {
     const agentConfig = config.agents?.[agentCategory];

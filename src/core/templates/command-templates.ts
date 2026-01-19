@@ -8,6 +8,7 @@
 export interface CommandContext {
   topic?: string;
   changeId?: string;
+  projectorDir?: string;
 }
 
 // ============ Research Prompts ============

@@ -8,6 +8,8 @@
  * - Other Agent Skills-compatible editors
  */
 
+import { replaceHardcodedDotProjectorPaths } from '../../utils/path-normalization.js';
+
 export interface SkillTemplate {
   name: string;
   description: string;
@@ -18,11 +20,8 @@ export interface SkillTemplate {
  * Template for projector-explore skill
  * Explore mode - adaptive thinking partner for exploring ideas and problems
  */
-export function getExploreSkillTemplate(): SkillTemplate {
-  return {
-    name: 'projector-explore',
-    description: 'Enter explore mode - a thinking partner for exploring ideas, investigating problems, and clarifying requirements. Use when the user wants to think through something before or during a change.',
-    instructions: `Enter explore mode. Think deeply. Visualize freely. Follow the conversation wherever it goes.
+export function getExploreSkillTemplate(projectorDir: string = '.projector'): SkillTemplate {
+  const rawInstructions = `Enter explore mode. Think deeply. Visualize freely. Follow the conversation wherever it goes.
 
 **This is a stance, not a workflow.** There are no fixed steps, no required sequence, no mandatory outputs. You're a thinking partner helping the user explore.
 
@@ -114,175 +113,41 @@ Think freely. When insights crystallize, you might offer:
 If the user mentions a change or you detect one is relevant:
 
 1. **Read existing artifacts for context**
-   - \`.projector/changes/<name>/proposal.md\`
-   - \`.projector/changes/<name>/design.md\`
-   - \`.projector/changes/<name>/tasks.md\`
-   - etc.
+   - \`${projectorDir}/changes/<name>/proposal.md\`
+   - \`${projectorDir}/changes/<name>/design.md\`
+   - \`${projectorDir}/changes/<name>/tasks.md\`
 
-2. **Reference them naturally in conversation**
-   - "Your design mentions using Redis, but we just realized SQLite fits better..."
-   - "The proposal scopes this to premium users, but we're now thinking everyone..."
+2. **Check the current status**
+   \`\`\`bash
+   projector show <name> --status
+   \`\`\`
 
-3. **Offer to capture when decisions are made**
-
-   | Insight Type | Where to Capture |
-   |--------------|------------------|
-   | New requirement discovered | \`specs/<capability>/spec.md\` |
-   | Requirement changed | \`specs/<capability>/spec.md\` |
-   | Design decision made | \`design.md\` |
-   | Scope changed | \`proposal.md\` |
-   | New work identified | \`tasks.md\` |
-   | Assumption invalidated | Relevant artifact |
-
-   Example offers:
-   - "That's a design decision. Capture it in design.md?"
-   - "This is a new requirement. Add it to specs?"
-   - "This changes scope. Update the proposal?"
-
-4. **The user decides** - Offer and move on. Don't pressure. Don't auto-capture.
+3. **Update the conversation accordingly**
+   - If PROPOSED → "I can see this is still in proposal stage. Want to work through implementation?"
+   - If IN_PROGRESS → "Looks like you're already working on this. Should we continue with tasks?"
+   - If DONE → "This appears to be complete. Are we exploring extensions or new work?"
 
 ---
 
-## What You Don't Have To Do
+## When to Stop Exploring
 
-- Follow a script
-- Ask the same questions every time
-- Produce a specific artifact
-- Reach a conclusion
-- Stay on topic if a tangent is valuable
-- Be brief (this is thinking time)
+The user decides when to stop. Common signals:
 
----
-
-## Handling Different Entry Points
-
-**User brings a vague idea:**
-\`\`\`
-User: I'm thinking about adding real-time collaboration
-
-You: Real-time collab is a big space. Let me think about this...
-
-      COLLABORATION SPECTRUM
-      ════════════════════════════════════════════
-
-      Awareness          Coordination         Sync
-          │                   │                 │
-          ▼                   ▼                 ▼
-      ┌────────┐         ┌────────┐        ┌────────┐
-      │Presence│         │Cursors │        │  CRDT  │
-      │  "3    │         │ Multi  │        │Conflict│
-      │online" │         │ select │        │  free  │
-      └────────┘         └────────┘        └────────┘
-          │                   │                 │
-       trivial            moderate           complex
-
-      Where's your head at?
-\`\`\`
-
-**User brings a specific problem:**
-\`\`\`
-User: The auth system is a mess
-
-You: [reads codebase]
-
-     ┌─────────────────────────────────────────────┐
-     │              CURRENT AUTH FLOW              │
-     └─────────────────────────────────────────────┘
-                        │
-          ┌─────────────┼─────────────┐
-          ▼             ▼             ▼
-     ┌─────────┐  ┌─────────┐  ┌─────────┐
-     │ Google  │  │  GitHub │  │  Email  │
-     │  OAuth  │  │  OAuth  │  │  Magic  │
-     └────┬────┘  └────┬────┘  └────┬────┘
-          │             │             │
-          └─────────────┼─────────────┘
-                        ▼
-                  ┌───────────┐
-                  │  Session  │
-                  └─────┬─────┘
-                        │
-                        ▼
-                  ┌───────────┐
-                  │   Perms   │
-                  └───────────┘
-
-     I see three tangles. Which one's burning?
-\`\`\`
-
-**User is stuck mid-implementation:**
-\`\`\`
-User: /opsx:explore add-auth-system
-      The OAuth integration is more complex than expected
-
-You: [reads change artifacts]
-
-     You're on task 4: "Implement OAuth flow"
-
-     Let me trace what's involved...
-
-     [draws diagram, explores options, suggests paths]
-
-     Want to update the design to reflect this?
-     Or add a spike task to investigate?
-\`\`\`
-
-**User wants to compare options:**
-\`\`\`
-User: Should we use Postgres or SQLite?
-
-You: Generic answer is boring. What's the context?
-
-User: A CLI tool that tracks local dev environments
-
-You: That changes everything.
-
-     ┌─────────────────────────────────────────────────┐
-     │         CLI TOOL DATA STORAGE                  │
-     └─────────────────────────────────────────────────┘
-
-     Key constraints:
-     • No daemon running
-     • Must work offline
-     • Single user
-
-                  SQLite          Postgres
-     Deployment   embedded ✓      needs server ✗
-     Offline      yes ✓           no ✗
-     Single file  yes ✓           no ✗
-
-     SQLite. Not even close.
-
-     Unless... is there a sync component?
-\`\`\`
+- **Natural conclusion**: "I think I understand this now"
+- **Decision point**: "Ready to move forward"
+- **Task switching**: "Let's work on something else"
+- **Time constraint**: "That's enough for now"
 
 ---
 
-## Ending Discovery
+## Optional: Capture Insights
 
-There's no required ending. Discovery might:
+If valuable insights emerged, you might offer:
 
-- **Flow into action**: "Ready to start? /opsx:new or /opsx:ff"
-- **Result in artifact updates**: "Updated design.md with these decisions"
-- **Just provide clarity**: User has what they need, moves on
-- **Continue later**: "We can pick this up anytime"
-
-When it feels like things are crystallizing, you might summarize:
-
-\`\`\`
-## What We Figured Out
-
-**The problem**: [crystallized understanding]
-
-**The approach**: [if one emerged]
-
-**Open questions**: [if any remain]
-
-**Next steps** (if ready):
-- Create a change: /opsx:new <name>
-- Fast-forward to tasks: /opsx:ff <name>
-- Keep exploring: just keep talking
-\`\`\`
+> "This was useful. Want me to:
+> - Create a change: /opsx:new <name>
+> - Fast-forward to tasks: /opsx:ff <name>
+> - Keep exploring: just keep talking"
 
 But this summary is optional. Sometimes the thinking IS the value.
 
@@ -296,7 +161,12 @@ But this summary is optional. Sometimes the thinking IS the value.
 - **Don't auto-capture** - Offer to save insights, don't just do it
 - **Do visualize** - A good diagram is worth many paragraphs
 - **Do explore the codebase** - Ground discussions in reality
-- **Do question assumptions** - Including the user's and your own`
+- **Do question assumptions** - Including the user's and your own`;
+
+  return {
+    name: 'projector-explore',
+    description: 'Enter explore mode - a thinking partner for exploring ideas, investigating problems, and clarifying requirements. Use when the user wants to think through something before or during a change.',
+    instructions: replaceHardcodedDotProjectorPaths(rawInstructions, projectorDir)
   };
 }
 
@@ -304,11 +174,8 @@ But this summary is optional. Sometimes the thinking IS the value.
  * Template for projector-new-change skill
  * Based on /opsx:new command
  */
-export function getNewChangeSkillTemplate(): SkillTemplate {
-  return {
-    name: 'projector-new-change',
-    description: 'Start a new Projector change using the experimental artifact workflow. Use when the user wants to create a new feature, fix, or modification with a structured step-by-step approach.',
-    instructions: `Start a new change using the experimental artifact-driven approach.
+export function getNewChangeSkillTemplate(projectorDir: string = '.projector'): SkillTemplate {
+  const rawInstructions = `Start a new change using the experimental artifact-driven approach.
 
 **Input**: The user's request should include a change name (kebab-case) OR a description of what they want to build.
 
@@ -371,7 +238,12 @@ After completing the steps, summarize:
 - Do NOT advance beyond showing the first artifact template
 - If the name is invalid (not kebab-case), ask for a valid name
 - If a change with that name already exists, suggest continuing that change instead
-- Pass --schema if using a non-default workflow`
+- Pass --schema if using a non-default workflow`;
+
+  return {
+    name: 'projector-new-change',
+    description: 'Start a new Projector change using the experimental artifact workflow. Use when the user wants to create a new feature, fix, or modification with a structured step-by-step approach.',
+    instructions: replaceHardcodedDotProjectorPaths(rawInstructions, projectorDir)
   };
 }
 
@@ -379,7 +251,7 @@ After completing the steps, summarize:
  * Template for projector-continue-change skill
  * Based on /opsx:continue command
  */
-export function getContinueChangeSkillTemplate(): SkillTemplate {
+export function getContinueChangeSkillTemplate(projectorDir: string = '.projector'): SkillTemplate {
   return {
     name: 'projector-continue-change',
     description: 'Continue working on an Projector change by creating the next artifact. Use when the user wants to progress their change, create the next artifact, or continue their workflow.',
@@ -493,7 +365,7 @@ For other schemas, follow the \`instruction\` field from the CLI output.
  * Template for projector-apply-change skill
  * For implementing tasks from a completed (or in-progress) change
  */
-export function getApplyChangeSkillTemplate(): SkillTemplate {
+export function getApplyChangeSkillTemplate(projectorDir: string = '.projector'): SkillTemplate {
   return {
     name: 'projector-apply-change',
     description: 'Implement tasks from an Projector change. Use when the user wants to start implementing, continue implementation, or work through tasks.',
@@ -651,7 +523,7 @@ This skill supports the "actions on a change" model:
  * Template for projector-ff-change skill
  * Fast-forward through artifact creation
  */
-export function getFfChangeSkillTemplate(): SkillTemplate {
+export function getFfChangeSkillTemplate(projectorDir: string = '.projector'): SkillTemplate {
   return {
     name: 'projector-ff-change',
     description: 'Fast-forward through Projector artifact creation. Use when the user wants to quickly create all artifacts needed for implementation without stepping through each one individually.',
@@ -746,7 +618,7 @@ After completing all artifacts, summarize:
  * Template for projector-sync-specs skill
  * For syncing delta specs from a change to main specs (agent-driven)
  */
-export function getSyncSpecsSkillTemplate(): SkillTemplate {
+export function getSyncSpecsSkillTemplate(projectorDir: string = '.projector'): SkillTemplate {
   return {
     name: 'projector-sync-specs',
     description: 'Sync delta specs from a change to main specs. Use when the user wants to update main specs with changes from a delta spec, without archiving the change.',
@@ -877,6 +749,536 @@ Main specs are now updated. The change remains active - archive when implementat
 - If something is unclear, ask for clarification
 - Show what you're changing as you go
 - The operation should be idempotent - running twice should give same result`
+  };
+}
+
+// -----------------------------------------------------------------------------
+// Core Projector Workflow Skills
+// -----------------------------------------------------------------------------
+
+/**
+ * Template for projector-proposal skill
+ * Creates and manages Projector change proposals
+ */
+export function getProposalSkillTemplate(projectorDir: string = '.projector'): SkillTemplate {
+  return {
+    name: 'projector-proposal',
+    description: 'Create and manage Projector change proposals. Use when the user wants to propose a new feature, fix, or modification that needs structured planning and review.',
+    instructions: `Create and manage Projector change proposals using the spec-driven workflow.
+
+**Input**: The user's request for a change they want to make to the project.
+
+**Steps**
+
+1. **Understand the change request**
+   - Listen to what the user wants to build or fix
+   - Ask clarifying questions if the request is vague
+   - Identify the scope and impact of the change
+
+2. **Check for existing changes**
+   \`\`\`bash
+   projector list --json
+   \`\`\`
+   - If a similar change exists, suggest continuing that instead
+   - Otherwise, proceed with creating a new proposal
+
+3. **Create the change directory**
+   \`\`\`bash
+   projector new change "<name>"
+   \`\`\`
+   - Use a kebab-case name derived from the user's request
+   - This creates the scaffolded structure at \`.projector/changes/<name>/\`
+
+4. **Create the proposal artifact**
+   \`\`\`bash
+   projector instructions proposal --change "<name>"
+   \`\`\`
+   - Get the template and context for creating the proposal.md
+   - Read the template and fill it out based on the user's request:
+     - **Why**: What problem does this solve? What's the business value?
+     - **What Changes**: High-level description of what will change
+     - **Capabilities**: List of new/modified capabilities (each becomes a spec)
+     - **Impact**: How this affects existing functionality, performance, etc.
+
+5. **Show the proposal status**
+   \`\`\`bash
+   projector status --change "<name>"
+   \`\`\`
+   - Show that proposal is complete
+   - Indicate what's next (specs need to be created)
+
+**Output**
+
+After completing the proposal, summarize:
+- Change name and location
+- Proposal summary (Why, What Changes, Capabilities, Impact)
+- Next steps: "Ready to create specs for each capability"
+- Prompt: "Continue with specs, or want to review the proposal first?"
+
+**Guidelines for Good Proposals**
+
+- **Why** should be compelling: What problem? Who benefits? Why now?
+- **What Changes** should be concrete: What parts of the system? What APIs? What data?
+- **Capabilities** should be specific: Each capability should be independently testable
+- **Impact** should be realistic: Performance impact? Breaking changes? Migration needed?
+
+**Guardrails**
+- Don't create specs yet - just the proposal
+- If the request is too vague, ask for clarification before creating
+- If similar work exists, suggest collaborating or continuing existing work
+- Ensure each capability listed could reasonably become a separate spec file`
+  };
+}
+
+/**
+ * Template for projector-apply skill
+ * Implements tasks from completed change proposals
+ */
+export function getApplySkillTemplate(projectorDir: string = '.projector'): SkillTemplate {
+  const rawInstructions = `Implement tasks from a completed Projector change proposal.
+
+**Input**: Optionally specify a change name. If omitted, MUST prompt for available changes.
+
+**Steps**
+
+1. **If no change name provided, prompt for selection**
+
+   Run \`projector list --json\` to get available changes. Use the **AskUserQuestion tool** to let the user select.
+
+   Show changes that are implementation-ready (have tasks artifact and all required artifacts).
+   Mark recently modified changes as "(Recent)".
+
+   **IMPORTANT**: Do NOT guess or auto-select a change. Always let the user choose.
+
+2. **Check change is ready for implementation**
+   \`\`\`bash
+   projector status --change "<name>" --json
+   \`\`\`
+   - Verify all required artifacts are complete (proposal, specs, design, tasks)
+   - If artifacts are missing, suggest using \`projector-continue-change\` first
+
+3. **Get implementation context**
+   \`\`\`bash
+   projector instructions apply --change "<name>" --json
+   \`\`\`
+   - This returns context files, task list, and progress
+   - Parse the JSON to understand the current state
+
+4. **Read all context files**
+   - proposal.md: Understand the high-level goals
+   - specs/*/spec.md: Understand the detailed requirements
+   - design.md: Understand the technical approach
+   - tasks.md: Get the task list to implement
+
+5. **Show current implementation plan**
+   - Display the change summary and schema used
+   - Show task progress: "N/M tasks complete"
+   - List the remaining tasks to implement
+
+6. **Implement tasks systematically**
+
+   For each pending task in tasks.md:
+   - **Start the task**: Mark as in-progress if the task format supports it
+   - **Understand the task**: Read relevant specs and design sections
+   - **Implement the changes**: Write code, tests, documentation as needed
+   - **Verify the implementation**: Run tests, check functionality
+   - **Mark the task complete**: Change \`- [ ]\` to \`- [x]\` in tasks.md
+   - **Show progress**: Briefly report what was completed
+
+   **Pause if:**
+   - Task requirements are unclear → ask for clarification
+   - Implementation reveals design issues → suggest updating artifacts
+   - Tests are failing → debug and fix
+   - User interrupts or wants to review progress
+
+7. **After completing tasks, validate**
+   \`\`\`bash
+   projector validate --changes <name>
+   \`\`\`
+   - Run validation to ensure the change meets all requirements
+   - Fix any issues found during validation
+
+**Output During Implementation**
+
+\`\`\`
+## Implementing: <change-name>
+
+Working on task 3/7: <task description>
+[Implementation details...]
+✓ Task complete: <summary of what was done>
+
+Working on task 4/7: <task description>
+[Implementation details...]
+✓ Task complete: <summary of what was done>
+\`\`\`
+
+**Output On Completion**
+
+\`\`\`
+## Implementation Complete: <change-name>
+
+**Progress:** 7/7 tasks complete ✓
+**Validation:** All checks passed
+
+### Summary
+- [x] Task 1: <description>
+- [x] Task 2: <description>
+...
+- [x] Task 7: <description>
+
+Ready to archive this change with: \`projector archive <name>\`
+\`\`\`
+
+**Guardrails**
+- Always read context files before starting implementation
+- Follow the technical approach defined in design.md
+- Implement tasks in order unless there's a good reason not to
+- Mark tasks complete immediately after finishing each one
+- If implementation reveals issues, pause and suggest artifact updates
+- Run validation before considering the change complete`;
+
+  return {
+    name: 'projector-apply',
+    description: 'Implement tasks from a completed Projector change proposal. Use when the user wants to start coding or implementing an approved change.',
+    instructions: replaceHardcodedDotProjectorPaths(rawInstructions, projectorDir)
+  };
+}
+
+/**
+ * Template for projector-archive skill
+ * Archives completed changes and updates main specs
+ */
+export function getArchiveSkillTemplate(projectorDir: string = '.projector'): SkillTemplate {
+  return {
+    name: 'projector-archive',
+    description: 'Archive a completed change and update main specifications. Use when the user has finished implementing and wants to integrate the change into the main codebase.',
+    instructions: `Archive a completed change and update main specifications.
+
+**Input**: Optionally specify a change name. If omitted, MUST prompt for available changes.
+
+**Steps**
+
+1. **If no change name provided, prompt for selection**
+
+   Run \`projector list --json\` to get available changes. Use the **AskUserQuestion tool** to let the user select.
+
+   Show completed changes (all artifacts done) that are ready for archiving.
+   Mark recently completed changes as "(Recent)".
+
+   **IMPORTANT**: Do NOT guess or auto-select a change. Always let the user choose.
+
+2. **Validate the change is ready**
+   \`\`\`bash
+   projector validate --changes <name>
+   \`\`\`
+   - Ensure all requirements are met
+   - Check that implementation is complete
+   - Verify tests are passing
+
+3. **Show what will be archived**
+   - Display the change summary from proposal.md
+   - List the capabilities that will be integrated into main specs
+   - Show any breaking changes or migration requirements
+
+4. **Confirm with user**
+   - Ask: "Ready to archive <name>? This will integrate the change into main specs."
+   - Wait for explicit confirmation before proceeding
+
+5. **Archive the change**
+   \`\`\`bash
+   projector archive <name>
+   \`\`\`
+   - This will:
+     - Move change directory to \`.projector/changes/archive/\`
+     - Update main specs with delta specs from the change
+     - Update any relevant project documentation
+
+6. **Verify the archive**
+   - Check that the change is in the archive
+   - Verify main specs were updated correctly
+   - Confirm no artifacts were lost
+
+**Output On Success**
+
+\`\`\`
+## Change Archived: <change-name>
+
+**Summary:** <brief description of the change>
+
+**Integrated Capabilities:**
+- **<capability-1>**: Updated main spec with new requirements
+- **<capability-2>**: Added new scenarios to existing requirements
+
+**Archive Location:** .projector/changes/archive/<name>/
+
+**Next Steps:**
+- Commit the updated main specs
+- Consider updating documentation
+- Communicate changes to team
+
+The change is now part of the main codebase specifications!
+\`\`\`
+
+**Output If Not Ready**
+
+\`\`\`
+## Change Not Ready to Archive
+
+**Issues Found:**
+- [ ] Some tasks are not complete
+- [ ] Validation failed: <specific issues>
+- [ ] Tests are not passing
+
+**Recommended Actions:**
+1. Complete remaining tasks with \`projector-apply\`
+2. Fix validation issues
+3. Run tests and ensure they pass
+4. Try archiving again
+
+Ready to fix these issues, or want to review the change first?
+\`\`\`
+
+**Guardrails**
+- Always validate before archiving
+- Get explicit user confirmation before proceeding
+- Ensure all delta specs are properly integrated
+- Verify the archive process completed successfully`
+  };
+}
+
+/**
+ * Template for projector-research skill
+ * Conducts research for new features or investigations
+ */
+export function getResearchSkillTemplate(projectorDir: string = '.projector'): SkillTemplate {
+  return {
+    name: 'projector-research',
+    description: 'Conduct structured research for feature development, technology evaluation, or problem investigation. Use when the user needs to explore options, analyze trade-offs, or investigate technical approaches.',
+    instructions: `Conduct structured research using Projector's research framework.
+
+**Input**: The research topic or question the user wants to investigate.
+
+**Steps**
+
+1. **Understand the research scope**
+   - Clarify what the user wants to research
+   - Identify the specific questions to answer
+   - Determine the research depth needed (quick analysis vs. deep dive)
+
+2. **Initialize research structure**
+   \`\`\`bash
+   # Create research directory if it doesn't exist
+   mkdir -p .projector/research/investigations
+   \`\`\`
+   - Create a research directory structure
+   - Set up files for different research aspects
+
+3. **Plan the research approach**
+   Based on the topic, identify which research artifacts are needed:
+   - **Stack Analysis**: Analyze current technology stack vs. requirements
+   - **Feature Landscape**: Survey existing solutions and approaches
+   - **Architecture**: Evaluate architectural patterns and options
+   - **Pitfalls**: Identify risks and potential issues
+
+4. **Conduct research systematically**
+
+   **For Stack Analysis:**
+   - Analyze current project dependencies and architecture
+   - Evaluate compatibility with new requirements
+   - Identify gaps or needed upgrades
+
+   **For Feature Landscape:**
+   - Research existing implementations in other projects
+   - Survey open-source solutions and libraries
+   - Compare different approaches and patterns
+
+   **For Architecture:**
+   - Design and evaluate architectural options
+   - Consider performance, scalability, and maintainability
+   - Document trade-offs between approaches
+
+   **For Pitfalls:**
+   - Identify common failure modes and risks
+   - Research edge cases and error conditions
+   - Plan mitigation strategies
+
+5. **Document findings**
+   Create structured documentation in \`.projector/research/\`:
+   - \`SUMMARY.md\`: Executive summary and recommendations
+   - \`investigations/stack-analysis.md\`: Technology stack evaluation
+   - \`investigations/feature-landscape.md\`: Solution survey
+   - \`investigations/architecture.md\`: Architectural analysis
+   - \`investigations/pitfalls.md\`: Risk assessment
+
+6. **Synthesize recommendations**
+   Based on all research, provide:
+   - **Recommended approach**: What should be done and why
+   - **Alternatives**: Other viable options with trade-offs
+   - **Next steps**: How to proceed with implementation
+   - **Open questions**: Remaining unknowns or uncertainties
+
+**Output Format**
+
+\`\`\`
+## Research Complete: <topic>
+
+**Executive Summary:**
+<brief overview of findings and recommendation>
+
+**Key Findings:**
+- **Stack Compatibility**: <analysis results>
+- **Solution Options**: <evaluated approaches>
+- **Recommended Architecture**: <chosen approach with rationale>
+- **Risks and Mitigations**: <identified risks and how to address them>
+
+**Recommendation:**
+<clear recommendation with justification>
+
+**Next Steps:**
+1. <first step to take>
+2. <second step to take>
+3. <third step to take>
+
+**Research Files Created:**
+- .projector/research/SUMMARY.md
+- .projector/research/investigations/stack-analysis.md
+- .projector/research/investigations/feature-landscape.md
+- .projector/research/investigations/architecture.md
+- .projector/research/investigations/pitfalls.md
+\`\`\`
+
+**Guardrails**
+- Focus research on the specific questions asked
+- Provide concrete, actionable recommendations
+- Clearly distinguish between facts, analysis, and opinions
+- Identify risks and uncertainties explicitly
+- Keep research documentation structured and reusable`
+  };
+}
+
+/**
+ * Template for projector-review skill
+ * Reviews and validates changes, specs, or implementations
+ */
+export function getReviewSkillTemplate(projectorDir: string = '.projector'): SkillTemplate {
+  return {
+    name: 'projector-review',
+    description: 'Review and validate Projector changes, specs, or implementations. Use when the user wants a quality check, code review, or validation of project artifacts.',
+    instructions: `Conduct comprehensive review of Projector artifacts, code changes, or specifications.
+
+**Input**: What to review (change name, spec name, or specific code/files).
+
+**Steps**
+
+1. **Identify review scope**
+   - Understand what the user wants reviewed (change, spec, implementation, etc.)
+   - Determine the type of review needed (validation, quality check, security, etc.)
+   - Clarify the review criteria and focus areas
+
+2. **Select appropriate review method**
+
+   **For Changes:**
+   \`\`\`bash
+   projector validate --changes <name> --strict --json
+   \`\`\`
+   - Run structured validation on the change
+   - Check all artifacts are complete and consistent
+   - Verify requirements are fully specified
+
+   **For Specs:**
+   \`\`\`bash
+   projector validate --specs <name> --strict --json
+   \`\`\`
+   - Validate spec format and completeness
+   - Check requirements are properly structured
+   - Verify scenarios are testable and complete
+
+   **For Implementation:**
+   - Review code against design and requirements
+   - Check test coverage and quality
+   - Verify adherence to project standards
+
+3. **Conduct systematic review**
+
+   **Structure Review:**
+   - Check all required sections are present
+   - Verify format follows Projector conventions
+   - Ensure cross-references are correct
+
+   **Content Review:**
+   - Verify requirements are clear and unambiguous
+   - Check scenarios are comprehensive and testable
+   - Ensure design decisions are justified
+
+   **Consistency Review:**
+   - Check alignment between proposal, specs, and design
+   - Verify tasks cover all requirements
+   - Ensure terminology is consistent
+
+   **Quality Review:**
+   - Assess clarity and completeness
+   - Check for missing edge cases
+   - Identify potential ambiguities or conflicts
+
+4. **Document review findings**
+   Structure findings by severity:
+
+   **Critical Issues:** Must be fixed before proceeding
+   - Missing required sections or artifacts
+   - Contradictions between artifacts
+   - Untestable or ambiguous requirements
+
+   **Important Issues:** Should be addressed
+   - Incomplete scenarios or edge cases
+   - Unclear design decisions
+   - Missing error handling
+
+   **Minor Issues:** Nice to have improvements
+   - Formatting inconsistencies
+   - Typographical errors
+   - Minor clarity improvements
+
+5. **Provide actionable feedback**
+   For each issue:
+   - Clearly state the problem
+   - Explain why it's an issue
+   - Suggest specific corrective action
+   - Reference relevant sections or guidelines
+
+**Output Format**
+
+\`\`\`
+## Review Complete: <item-name>
+
+**Overall Assessment:** <summary of quality state>
+**Critical Issues:** <number> | **Important Issues:** <number> | **Minor Issues:** <number>
+
+### Critical Issues (Must Fix)
+<list of critical issues with specific fixes needed>
+
+### Important Issues (Should Fix)
+<list of important issues with suggested improvements>
+
+### Minor Issues (Nice to Have)
+<list of minor issues and polish suggestions>
+
+### Strengths
+<positive aspects worth noting or preserving>
+
+### Recommendations
+1. <priority recommendation>
+2. <secondary recommendation>
+3. <suggestion for next steps>
+
+**Validation Command:** \`projector validate <type> <name>\`
+\`\`\`
+
+**Guardrails**
+- Be constructive and specific in feedback
+- Prioritize issues by impact on project success
+- Provide actionable suggestions, not just criticism
+- Acknowledge good work and strengths
+- Focus review on stated criteria and scope`
   };
 }
 
@@ -1518,7 +1920,7 @@ After completing all artifacts, summarize:
  * Template for projector-archive-change skill
  * For archiving completed changes in the experimental workflow
  */
-export function getArchiveChangeSkillTemplate(): SkillTemplate {
+export function getArchiveChangeSkillTemplate(projectorDir: string = '.projector'): SkillTemplate {
   return {
     name: 'projector-archive-change',
     description: 'Archive a completed change in the experimental workflow. Use when the user wants to finalize and archive a change after implementation is complete.',
@@ -1961,6 +2363,8 @@ Target archive directory already exists.
 - Preserve .projector.yaml when moving to archive (it moves with the directory)
 - Quick sync check: look for requirement names in delta specs, verify they exist in main specs
 - Show clear summary of what happened
-- If sync is requested, use /opsx:sync approach (agent-driven)`
+ - If sync is requested, use /opsx:sync approach (agent-driven)`
   };
 }
+
+

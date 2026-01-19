@@ -42,17 +42,17 @@ export abstract class SlashCommandConfigurator {
     }));
   }
 
-  async generateAll(projectPath: string, _projectorDir: string): Promise<string[]> {
+  async generateAll(projectPath: string, projectorDir: string): Promise<string[]> {
     const createdOrUpdated: string[] = [];
 
     for (const target of this.getTargets()) {
-      const body = this.getBody(target.id);
+      const body = this.getBody(target.id, projectorDir);
       const filePath = FileSystemUtils.joinPath(projectPath, target.path);
 
       if (await FileSystemUtils.fileExists(filePath)) {
         await this.updateBody(filePath, body);
       } else {
-        const frontmatter = this.getFrontmatter(target.id);
+        const frontmatter = this.getFrontmatter(target.id, projectorDir);
         const sections: string[] = [];
         if (frontmatter) {
           sections.push(frontmatter.trim());
@@ -68,13 +68,13 @@ export abstract class SlashCommandConfigurator {
     return createdOrUpdated;
   }
 
-  async updateExisting(projectPath: string, _projectorDir: string): Promise<string[]> {
+  async updateExisting(projectPath: string, projectorDir: string): Promise<string[]> {
     const updated: string[] = [];
 
     for (const target of this.getTargets()) {
       const filePath = FileSystemUtils.joinPath(projectPath, target.path);
       if (await FileSystemUtils.fileExists(filePath)) {
-        const body = this.getBody(target.id);
+        const body = this.getBody(target.id, projectorDir);
         await this.updateBody(filePath, body);
         updated.push(target.path);
       }
@@ -84,10 +84,10 @@ export abstract class SlashCommandConfigurator {
   }
 
   protected abstract getRelativePath(id: SlashCommandId): string;
-  protected abstract getFrontmatter(id: SlashCommandId): string | undefined;
+  protected abstract getFrontmatter(id: SlashCommandId, projectorDir?: string): string | undefined;
 
-  protected getBody(id: SlashCommandId): string {
-    return TemplateManager.getSlashCommandBody(id).trim();
+  protected getBody(id: SlashCommandId, projectorDir: string = '.projector'): string {
+    return TemplateManager.getSlashCommandBody(id, projectorDir).trim();
   }
 
   // Resolve absolute path for a given slash command target. Subclasses may override
