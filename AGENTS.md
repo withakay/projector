@@ -16,3 +16,32 @@ Use `@/.projector/AGENTS.md` to learn:
 Keep this managed block so 'projector update' can refresh the instructions.
 
 <!-- PROJECTOR:END -->
+
+## Development Commands
+
+Use the Makefile for common development tasks:
+
+```bash
+# Build the project
+make build
+
+# Run tests
+make test
+
+# Run tests in watch mode
+make test-watch
+
+# Run tests with coverage
+make test-coverage
+
+# Run linter
+make lint
+
+# Clean build artifacts
+make clean
+
+# Show all available targets
+make help
+```
+
+All Makefile commands use pnpm internally.
