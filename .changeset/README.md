@@ -24,7 +24,7 @@ Use this structure for your changeset content:
 
 ```markdown
 ---
-"@withakay/projector": patch
+"@withakay/spool": patch
 ---
 
 ### New Features

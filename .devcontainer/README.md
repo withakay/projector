@@ -1,6 +1,6 @@
 # Dev Container Setup
 
-This directory contains the VS Code dev container configuration for Projector development.
+This directory contains the VS Code dev container configuration for Spool development.
 
 ## What's Included
 

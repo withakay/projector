@@ -1,21 +1,21 @@
 {
-  "name": "@withakay/projector",
+  "name": "@withakay/spool",
   "version": "0.19.0",
   "description": "AI-native system for spec-driven development",
   "keywords": [
-    "projector",
+    "spool",
     "specs",
     "cli",
     "ai",
     "development"
   ],
-  "homepage": "https://github.com/withakay/Projector",
+  "homepage": "https://github.com/withakay/Spool",
   "repository": {
     "type": "git",
-    "url": "https://github.com/withakay/Projector"
+    "url": "https://github.com/withakay/Spool"
   },
   "license": "MIT",
-  "author": "Projector Contributors",
+  "author": "Spool Contributors",
   "type": "module",
   "publishConfig": {
     "access": "public"
@@ -27,7 +27,7 @@
     }
   },
   "bin": {
-    "projector": "./bin/projector.js"
+    "spool": "./bin/spool.js"
   },
   "files": [
     "dist",
@@ -42,7 +42,7 @@
     "lint": "eslint src/",
     "build": "node build.js",
     "dev": "tsc --watch",
-    "dev:cli": "pnpm build && node bin/projector.js",
+    "dev:cli": "pnpm build && node bin/spool.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
