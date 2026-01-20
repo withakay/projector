@@ -26,6 +26,7 @@ import {
   getModuleIds,
   getActiveChangeIds,
   getChangesForModule,
+  getModuleChangeIndex,
 } from '../../utils/item-discovery.js';
 import { getChangesPath, getModulesPath } from '../project-config.js';
 
@@ -129,6 +130,8 @@ export class Validator {
    */
   async validateChangeDeltaSpecs(changeDir: string): Promise<ValidationReport> {
     const issues: ValidationIssue[] = [];
+    const changeId = path.basename(changeDir);
+    issues.push(...await this.applyModuleGroupingRules(changeId));
     const specsDir = path.join(changeDir, 'specs');
     let totalDeltas = 0;
     const missingHeaderSpecs: string[] = [];
@@ -358,6 +361,51 @@ export class Validator {
     }
 
     return { moduleReport, changeReports };
+  }
+
+  private async applyModuleGroupingRules(changeId: string): Promise<ValidationIssue[]> {
+    const issues: ValidationIssue[] = [];
+    const parsed = parseModularChangeName(changeId);
+
+    if (!parsed) {
+      issues.push({
+        level: 'ERROR',
+        path: 'module',
+        message: `${VALIDATION_MESSAGES.CHANGE_LEGACY_ID}: ${changeId}`,
+      });
+      return issues;
+    }
+
+    const changeIndex = await getModuleChangeIndex();
+    const modules = changeIndex.get(changeId) ?? [];
+
+    if (modules.length === 0) {
+      issues.push({
+        level: 'ERROR',
+        path: 'module',
+        message: `${VALIDATION_MESSAGES.CHANGE_NOT_IN_MODULE}: ${changeId}`,
+      });
+      return issues;
+    }
+
+    if (modules.length > 1) {
+      issues.push({
+        level: 'ERROR',
+        path: 'module',
+        message: `${VALIDATION_MESSAGES.CHANGE_MULTIPLE_MODULES}: ${modules.join(', ')}`,
+      });
+      return issues;
+    }
+
+    if (modules[0] !== parsed.moduleId) {
+      issues.push({
+        level: 'ERROR',
+        path: 'module',
+        message: `${VALIDATION_MESSAGES.CHANGE_MODULE_MISMATCH}: expected ${parsed.moduleId}, listed under ${modules[0]}`,
+      });
+    }
+
+    return issues;
   }
 
   private async applyModuleRules(module: Module, root: string): Promise<ValidationIssue[]> {

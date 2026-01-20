@@ -428,12 +428,13 @@ export class InitCommand {
     });
 
      // Step 3: Install Spool skills (Agent Skills) as a core part of init
-     const skillsSpinner = this.startSpinner('Installing Spool skills...');
-     await this.installSpoolSkills(projectPath, spoolDir);
-     skillsSpinner.stopAndPersist({
-       symbol: PALETTE.white(''),
-       text: PALETTE.white('Spool skills installed'),
-     });
+      const skillsSpinner = this.startSpinner('Installing Spool skills...');
+      await this.installSpoolSkills(projectPath, spoolDir, config.aiTools);
+      skillsSpinner.stopAndPersist({
+        symbol: PALETTE.white(''),
+        text: PALETTE.white('Spool skills installed'),
+      });
+
 
 
     // Success message
@@ -808,7 +809,8 @@ export class InitCommand {
    */
   private async installSpoolSkills(
     projectPath: string,
-    spoolDir: string
+    spoolDir: string,
+    toolIds: string[]
   ): Promise<void> {
     const { SkillsConfigurator } = await import('./configurators/skills.js');
     const configurator = new SkillsConfigurator();
@@ -830,7 +832,13 @@ export class InitCommand {
       )
       .map((skill) => skill.id);
 
-    await configurator.installSkills(projectPath, spoolDir, skillIds);
+    const supportedTools = ['claude', 'opencode', 'codex', 'github-copilot'];
+    for (const toolId of toolIds) {
+      if (!supportedTools.includes(toolId)) {
+        continue;
+      }
+      await configurator.installSkills(projectPath, spoolDir, skillIds, toolId as any);
+    }
   }
 
   private async configureRootAgentsStub(

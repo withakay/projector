@@ -27,10 +27,14 @@ import {
   type ArtifactInstructions,
   type SchemaInfo,
 } from '../core/artifact-graph/index.js';
-import { createChange, validateChangeName } from '../utils/change-utils.js';
+import { createModularChange, validateChangeIdentifier, validateChangeName, validateModuleId } from '../utils/change-utils.js';
+import { getModuleIds, getModuleInfo } from '../utils/item-discovery.js';
+import { generateModuleContent } from '../core/parsers/module-parser.js';
 import { getExploreSkillTemplate, getNewChangeSkillTemplate, getContinueChangeSkillTemplate, getApplyChangeSkillTemplate, getFfChangeSkillTemplate, getSyncSpecsSkillTemplate, getArchiveChangeSkillTemplate, getOpsxExploreCommandTemplate, getOpsxNewCommandTemplate, getOpsxContinueCommandTemplate, getOpsxApplyCommandTemplate, getOpsxFfCommandTemplate, getOpsxSyncCommandTemplate, getOpsxArchiveCommandTemplate } from '../core/templates/skill-templates.js';
 import { FileSystemUtils } from '../utils/file-system.js';
-import { getChangesPath, getSpoolDirName } from '../core/project-config.js';
+import { getChangesPath, getModulesPath, getSpoolDirName } from '../core/project-config.js';
+import { formatModuleFolderName, getNextModuleId, parseModuleName, UNGROUPED_MODULE_ID } from '../core/schemas/index.js';
+import { isInteractive } from '../utils/interactive.js';
 
 // -----------------------------------------------------------------------------
 // Types for Apply Instructions
@@ -59,6 +63,82 @@ interface ApplyInstructions {
 }
 
 const DEFAULT_SCHEMA = 'spec-driven';
+const CREATE_MODULE_CHOICE = '__create-module__';
+
+async function createModuleFromPrompt(projectRoot: string): Promise<string> {
+  const modulesPath = getModulesPath(projectRoot);
+  await fs.promises.mkdir(modulesPath, { recursive: true });
+
+  const existingModules = await getModuleIds(projectRoot);
+  const { input } = await import('@inquirer/prompts');
+  let name = '';
+
+  while (!name) {
+    name = await input({
+      message: 'Enter module name (kebab-case):',
+      validate: (value) => {
+        if (!value.trim()) return 'Module name is required';
+        if (!/^[a-z][a-z0-9-]*$/.test(value)) return 'Must be kebab-case (e.g., project-setup)';
+        const exists = existingModules.some((moduleName) => {
+          const parsed = parseModuleName(moduleName);
+          return parsed?.name === value;
+        });
+        if (exists) return `Module "${value}" already exists`;
+        return true;
+      },
+    });
+  }
+
+  const nextId = getNextModuleId(existingModules);
+  const folderName = formatModuleFolderName(nextId, name);
+  const moduleDir = path.join(modulesPath, folderName);
+  await fs.promises.mkdir(moduleDir, { recursive: true });
+
+  const title = name.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+  const content = generateModuleContent({
+    title,
+    purpose: '<!-- Describe the purpose of this module/epic -->',
+    scope: ['*'],
+    dependsOn: [],
+    changes: [],
+  });
+
+  await fs.promises.writeFile(path.join(moduleDir, 'module.md'), content, 'utf-8');
+  return nextId;
+}
+
+async function resolveModuleId(projectRoot: string, moduleOption?: string): Promise<string> {
+  if (moduleOption) {
+    const validation = validateModuleId(moduleOption);
+    if (!validation.valid) {
+      throw new Error(validation.error);
+    }
+    return moduleOption;
+  }
+
+  if (!isInteractive({})) {
+    return UNGROUPED_MODULE_ID;
+  }
+
+  const modules = await getModuleInfo(projectRoot);
+  const { select } = await import('@inquirer/prompts');
+  const choices = [
+    { name: `${UNGROUPED_MODULE_ID} - ungrouped (ad-hoc)`, value: UNGROUPED_MODULE_ID },
+    ...modules.map((moduleInfo) => ({ name: `${moduleInfo.id} - ${moduleInfo.name}`, value: moduleInfo.id })),
+    { name: 'Create a new module…', value: CREATE_MODULE_CHOICE },
+  ];
+
+  const choice = await select({
+    message: 'Select a module for this change:',
+    choices,
+  });
+
+  if (choice === CREATE_MODULE_CHOICE) {
+    return createModuleFromPrompt(projectRoot);
+  }
+
+  return choice;
+}
 
 /**
  * Checks if color output is disabled via NO_COLOR env or --no-color flag.
@@ -132,7 +212,7 @@ async function validateChangeExists(
   }
 
   // Validate change name format to prevent path traversal
-  const nameValidation = validateChangeName(changeName);
+  const nameValidation = validateChangeIdentifier(changeName);
   if (!nameValidation.valid) {
     throw new Error(`Invalid change name '${changeName}': ${nameValidation.error}`);
   }
@@ -736,6 +816,7 @@ async function templatesCommand(options: TemplatesOptions): Promise<void> {
 interface NewChangeOptions {
   description?: string;
   schema?: string;
+  module?: string;
 }
 
 async function newChangeCommand(name: string | undefined, options: NewChangeOptions): Promise<void> {
@@ -753,24 +834,28 @@ async function newChangeCommand(name: string | undefined, options: NewChangeOpti
     validateSchemaExists(options.schema);
   }
 
+  const moduleId = await resolveModuleId(process.cwd(), options.module);
   const schemaDisplay = options.schema ? ` with schema '${options.schema}'` : '';
-  const spinner = ora(`Creating change '${name}'${schemaDisplay}...`).start();
+  const spinner = ora(`Creating change '${name}' in module ${moduleId}${schemaDisplay}...`).start();
 
   try {
     const projectRoot = process.cwd();
-    await createChange(projectRoot, name, { schema: options.schema });
+    const changeInfo = await createModularChange(projectRoot, name, {
+      schema: options.schema,
+      moduleId,
+    });
 
     // If description provided, create README.md with description
     if (options.description) {
       const { promises: fs } = await import('fs');
-      const changeDir = path.join(getChangesPath(projectRoot), name);
+      const changeDir = path.join(getChangesPath(projectRoot), changeInfo.id);
       const readmePath = path.join(changeDir, 'README.md');
-      await fs.writeFile(readmePath, `# ${name}\n\n${options.description}\n`, 'utf-8');
+      await fs.writeFile(readmePath, `# ${changeInfo.id}\n\n${options.description}\n`, 'utf-8');
     }
 
     const schemaUsed = options.schema ?? DEFAULT_SCHEMA;
     const spoolDir = getSpoolDirName(projectRoot);
-    spinner.succeed(`Created change '${name}' at ${spoolDir}/changes/${name}/ (schema: ${schemaUsed})`);
+    spinner.succeed(`Created change '${changeInfo.id}' at ${spoolDir}/changes/${changeInfo.id}/ (schema: ${schemaUsed})`);
   } catch (error) {
     spinner.fail(`Failed to create change '${name}'`);
     throw error;
@@ -1036,6 +1121,7 @@ export function registerArtifactWorkflowCommands(program: Command): void {
     .description('[Experimental] Create a new change directory')
     .option('--description <text>', 'Description to add to README.md')
     .option('--schema <name>', `Workflow schema to use (default: ${DEFAULT_SCHEMA})`)
+    .option('--module <id>', 'Module ID to associate the change with (default: 000)')
     .action(async (name: string, options: NewChangeOptions) => {
       try {
         await newChangeCommand(name, options);

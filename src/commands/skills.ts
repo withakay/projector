@@ -12,12 +12,21 @@ import * as fs from 'node:fs/promises';
 import { PALETTE } from '../core/styles/palette.js';
 import { getSpoolDirName } from '../core/project-config.js';
 import { FileSystemUtils } from '../utils/file-system.js';
-import { SkillsConfigurator } from '../core/configurators/skills.js';
+import { SkillsConfigurator, type SkillsHarness } from '../core/configurators/skills.js';
 
 interface SkillsOptions {
   list?: boolean;
   install?: string[];
   uninstall?: string[];
+}
+
+function normalizeToolId(raw?: string): SkillsHarness {
+  const value = (raw ?? 'claude').trim();
+  const supported: SkillsHarness[] = ['claude', 'opencode', 'codex', 'github-copilot'];
+  if (supported.includes(value as SkillsHarness)) {
+    return value as SkillsHarness;
+  }
+  throw new Error(`Unsupported tool: ${value}. Use one of ${supported.join(', ')}`);
 }
 
 /**
@@ -41,7 +50,7 @@ async function listAvailableSkills(): Promise<void> {
     );
     
     const experimentalSkills = availableSkills.filter(skill =>
-      ['spool-explore', 'spool-new-change', 'spool-continue-change', 'spool-ff-change', 'spool-sync-specs', 'spool-archive-change'].includes(skill.id)
+      ['spool-explore', 'spool-new-change', 'spool-continue-change', 'spool-apply-change', 'spool-ff-change', 'spool-sync-specs', 'spool-archive-change'].includes(skill.id)
     );
     
     // Core workflow skills
@@ -83,17 +92,17 @@ async function listAvailableSkills(): Promise<void> {
 /**
  * Install specified skills
  */
-async function installSkills(skillIds: string[]): Promise<void> {
-  const spinner = ora('Installing Spool Skills...').start();
+async function installSkills(skillIds: string[], toolId: SkillsHarness): Promise<void> {
+  const spinner = ora(`Installing Spool Skills for ${toolId}...`).start();
   
   try {
     const projectRoot = process.cwd();
     const spoolDir = getSpoolDirName(projectRoot);
     const configurator = new SkillsConfigurator();
     
-    await configurator.installSkills(projectRoot, spoolDir, skillIds);
+    await configurator.installSkills(projectRoot, spoolDir, skillIds, toolId);
     
-    spinner.succeed('Spool Skills installed successfully!');
+    spinner.succeed(`Spool Skills installed successfully for ${toolId}!`);
     
     console.log();
     console.log(chalk.bold('Skills Installed:'));
@@ -114,15 +123,14 @@ async function installSkills(skillIds: string[]): Promise<void> {
 /**
  * List currently installed skills
  */
-async function listInstalledSkills(): Promise<void> {
-  const spinner = ora('Checking installed skills...').start();
+async function listInstalledSkills(toolId: SkillsHarness): Promise<void> {
+  const spinner = ora(`Checking installed skills for ${toolId}...`).start();
   
   try {
     const projectRoot = process.cwd();
-    const spoolDir = getSpoolDirName(projectRoot);
     const configurator = new SkillsConfigurator();
     
-    const installedSkills = await configurator.getInstalledSkills(projectRoot);
+    const installedSkills = await configurator.getInstalledSkills(projectRoot, toolId);
     
     spinner.stop();
     
@@ -148,13 +156,13 @@ async function listInstalledSkills(): Promise<void> {
 /**
  * Uninstall specified skills
  */
-async function uninstallSkills(skillIds: string[]): Promise<void> {
-  const spinner = ora('Uninstalling Spool Skills...').start();
+async function uninstallSkills(skillIds: string[], toolId: SkillsHarness): Promise<void> {
+  const spinner = ora(`Uninstalling Spool Skills for ${toolId}...`).start();
   
   try {
     const projectRoot = process.cwd();
     const configurator = new SkillsConfigurator();
-    const skillsDir = configurator.getSkillsDirectory(projectRoot);
+    const skillsDir = configurator.getSkillsDirectory(projectRoot, toolId);
     
     let removedCount = 0;
     
@@ -207,15 +215,17 @@ export function registerSkillsCommands(program: Command): void {
     .command('install <skills...>')
     .description('Install specified Spool skills (or --all for all)')
     .option('--all', 'Install all available skills')
-    .action(async (skills: string[], options: { all?: boolean }) => {
+    .option('--tool <toolId>', 'Target tool (claude, opencode, codex, github-copilot)', 'claude')
+    .action(async (skills: string[], options: { all?: boolean; tool?: string }) => {
+      const toolId = normalizeToolId(options.tool);
       if (options.all) {
         // Install all available skills
         const configurator = new SkillsConfigurator();
         const availableSkills = configurator.getAvailableSkills();
         const skillIds = availableSkills.map(skill => skill.id);
-        await installSkills(skillIds);
+        await installSkills(skillIds, toolId);
       } else if (skills.length > 0) {
-        await installSkills(skills);
+        await installSkills(skills, toolId);
       } else {
         console.log(chalk.yellow('Error: Please specify skill IDs to install or use --all.'));
         console.log(chalk.gray('Use ') + chalk.cyan('spool skills list') + chalk.gray(' to see available skills.'));
@@ -227,9 +237,11 @@ export function registerSkillsCommands(program: Command): void {
   skillsCmd
     .command('uninstall <skills...>')
     .description('Remove specified Spool skills')
-    .action(async (skills: string[]) => {
+    .option('--tool <toolId>', 'Target tool (claude, opencode, codex, github-copilot)', 'claude')
+    .action(async (skills: string[], options: { tool?: string }) => {
+      const toolId = normalizeToolId(options.tool);
       if (skills.length > 0) {
-        await uninstallSkills(skills);
+        await uninstallSkills(skills, toolId);
       } else {
         console.log(chalk.yellow('Error: Please specify skill IDs to uninstall.'));
         console.log(chalk.gray('Use ') + chalk.cyan('spool skills list') + chalk.gray(' to see installed skills.'));
@@ -241,7 +253,9 @@ export function registerSkillsCommands(program: Command): void {
   skillsCmd
     .command('status')
     .description('Show currently installed Spool skills')
-    .action(async () => {
-      await listInstalledSkills();
+    .option('--tool <toolId>', 'Target tool (claude, opencode, codex, github-copilot)', 'claude')
+    .action(async (options: { tool?: string }) => {
+      const toolId = normalizeToolId(options.tool);
+      await listInstalledSkills(toolId);
     });
 }

@@ -6,6 +6,7 @@
  */
 
 import path from 'path';
+import os from 'os';
 import { promises as fs } from 'fs';
 import { FileSystemUtils } from '../../utils/file-system.js';
 import { replaceHardcodedDotSpoolPaths } from '../../utils/path-normalization.js';
@@ -22,6 +23,7 @@ import {
   getExploreSkillTemplate,
   getNewChangeSkillTemplate,
   getContinueChangeSkillTemplate,
+  getApplyChangeSkillTemplate,
   getFfChangeSkillTemplate,
   getSyncSpecsSkillTemplate,
   getArchiveChangeSkillTemplate,
@@ -31,6 +33,8 @@ import {
 /**
  * Skills configuration for a specific skill
  */
+export type SkillsHarness = 'claude' | 'opencode' | 'codex' | 'github-copilot';
+
 interface SkillConfig {
   id: string;
   template: SkillTemplate;
@@ -58,7 +62,22 @@ export class SkillsConfigurator implements ToolConfigurator {
   /**
    * Get the path where skills should be installed
    */
-  getSkillsDirectory(projectPath: string): string {
+  getSkillsDirectory(projectPath: string, toolId: SkillsHarness = 'claude'): string {
+    if (toolId === 'codex') {
+      const base = (process.env.CODEX_HOME && process.env.CODEX_HOME.trim())
+        ? process.env.CODEX_HOME.trim()
+        : FileSystemUtils.joinPath(os.homedir(), '.codex');
+      return FileSystemUtils.joinPath(base, 'skills');
+    }
+
+    if (toolId === 'opencode') {
+      return path.join(projectPath, '.opencode', 'skills');
+    }
+
+    if (toolId === 'github-copilot') {
+      return path.join(projectPath, '.github', 'skills');
+    }
+
     return path.join(projectPath, '.claude', 'skills');
   }
 
@@ -114,7 +133,7 @@ export class SkillsConfigurator implements ToolConfigurator {
       },
       {
         id: 'spool-apply-change',
-        template: applySpoolDirToTemplate(getFfChangeSkillTemplate(spoolDir), spoolDir), // Note: Using FF template for apply-change
+        template: applySpoolDirToTemplate(getApplyChangeSkillTemplate(spoolDir), spoolDir),
         directory: 'spool-apply-change',
       },
       {
@@ -142,9 +161,10 @@ export class SkillsConfigurator implements ToolConfigurator {
   async installSkills(
     projectPath: string,
     spoolDir: string,
-    skillIds: string[]
+    skillIds: string[],
+    toolId: SkillsHarness = 'claude'
   ): Promise<void> {
-    const skillsDir = this.getSkillsDirectory(projectPath);
+    const skillsDir = this.getSkillsDirectory(projectPath, toolId);
     const availableSkills = this.getAvailableSkills(spoolDir);
 
     // Filter skills to install
@@ -200,8 +220,8 @@ ${normalizedInstructions}
   /**
    * Check if skills are already configured
    */
-  async isConfigured(projectPath: string): Promise<boolean> {
-    const skillsDir = this.getSkillsDirectory(projectPath);
+  async isConfigured(projectPath: string, toolId: SkillsHarness = 'claude'): Promise<boolean> {
+    const skillsDir = this.getSkillsDirectory(projectPath, toolId);
     
     try {
       // Check if skills directory exists
@@ -248,8 +268,8 @@ ${normalizedInstructions}
   /**
    * Get skills that are already installed
    */
-  async getInstalledSkills(projectPath: string): Promise<string[]> {
-    const skillsDir = this.getSkillsDirectory(projectPath);
+  async getInstalledSkills(projectPath: string, toolId: SkillsHarness = 'claude'): Promise<string[]> {
+    const skillsDir = this.getSkillsDirectory(projectPath, toolId);
     const installedSkills: string[] = [];
 
     try {

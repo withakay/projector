@@ -51,6 +51,10 @@ export const VALIDATION_MESSAGES = {
   MODULE_CHANGE_PREFIX_MISMATCH: 'Change does not have the correct module prefix',
   MODULE_ORPHAN_CHANGE: 'Change with module prefix not listed in module',
   MODULE_SCOPE_VIOLATION: 'Change modifies capability outside module scope',
+  CHANGE_LEGACY_ID: 'Change uses legacy (non-modular) ID; assign it to a module',
+  CHANGE_NOT_IN_MODULE: 'Change is not listed in any module',
+  CHANGE_MULTIPLE_MODULES: 'Change is listed in multiple modules',
+  CHANGE_MODULE_MISMATCH: 'Change module listing does not match its prefix',
 
   // Guidance snippets (appended to primary messages for remediation)
   GUIDE_NO_DELTAS:

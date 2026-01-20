@@ -190,7 +190,7 @@ export function getNewChangeSkillTemplate(spoolDir: string = '.spool'): SkillTem
 
    **IMPORTANT**: Do NOT proceed without understanding what the user wants to build.
 
-2. **Determine the workflow schema**
+ 2. **Determine the workflow schema**
 
    Use the default schema (omit \`--schema\`) unless the user explicitly requests a different workflow.
 
@@ -201,28 +201,41 @@ export function getNewChangeSkillTemplate(spoolDir: string = '.spool'): SkillTem
 
    **Otherwise**: Omit \`--schema\` to use the default.
 
-3. **Create the change directory**
+ 3. **Pick or create a module**
    \`\`\`bash
-   spool new change "<name>"
+   spool module list --json
+   \`\`\`
+   - If the request maps to an existing module, use that module ID
+   - If this is a small, ungrouped task, default to module \`000\`
+   - If no module fits, create one:
+     \`\`\`bash
+     spool module new "<module-name>"
+     \`\`\`
+   - Capture the module ID for the new change
+
+ 4. **Create the change directory (module-first)**
+   \`\`\`bash
+   spool new change "<name>" --module <module-id>
    \`\`\`
    Add \`--schema <name>\` only if the user requested a specific workflow.
-   This creates a scaffolded change at \`.spool/changes/<name>/\` with the selected schema.
+   This creates a scaffolded change at \`.spool/changes/<module-id>-NN_<name>/\` with the selected schema.
 
-4. **Show the artifact status**
+ 5. **Show the artifact status**
    \`\`\`bash
-   spool status --change "<name>"
+   spool status --change "<change-id>"
    \`\`\`
    This shows which artifacts need to be created and which are ready (dependencies satisfied).
 
-5. **Get instructions for the first artifact**
+ 6. **Get instructions for the first artifact**
    The first artifact depends on the schema (e.g., \`proposal\` for spec-driven, \`spec\` for tdd).
    Check the status output to find the first artifact with status "ready".
    \`\`\`bash
-   spool instructions <first-artifact-id> --change "<name>"
+   spool instructions <first-artifact-id> --change "<change-id>"
    \`\`\`
    This outputs the template and context for creating the first artifact.
 
-6. **STOP and wait for user direction**
+ 7. **STOP and wait for user direction**
+
 
 **Output**
 
@@ -277,7 +290,7 @@ export function getContinueChangeSkillTemplate(spoolDir: string = '.spool'): Ski
 
 2. **Check current status**
    \`\`\`bash
-   spool status --change "<name>" --json
+   spool status --change "<change-id>" --json
    \`\`\`
    Parse the JSON to understand current state. The response includes:
    - \`schemaName\`: The workflow schema being used (e.g., "spec-driven", "tdd")
@@ -300,7 +313,7 @@ export function getContinueChangeSkillTemplate(spoolDir: string = '.spool'): Ski
    - Pick the FIRST artifact with \`status: "ready"\` from the status output
    - Get its instructions:
      \`\`\`bash
-     spool instructions <artifact-id> --change "<name>" --json
+     spool instructions <artifact-id> --change "<change-id>" --json
      \`\`\`
    - Parse the JSON to get template, dependencies, and what it unlocks
    - **Create the artifact file** using the template as a starting point:
@@ -318,7 +331,7 @@ export function getContinueChangeSkillTemplate(spoolDir: string = '.spool'): Ski
 
 4. **After creating an artifact, show progress**
    \`\`\`bash
-   spool status --change "<name>"
+   spool status --change "<change-id>"
    \`\`\`
 
 **Output**
@@ -387,7 +400,7 @@ export function getApplyChangeSkillTemplate(spoolDir: string = '.spool'): SkillT
 
 2. **Check status to understand the schema**
    \`\`\`bash
-   spool status --change "<name>" --json
+   spool status --change "<change-id>" --json
    \`\`\`
    Parse the JSON to understand:
    - \`schemaName\`: The workflow being used (e.g., "spec-driven", "tdd")
@@ -396,7 +409,7 @@ export function getApplyChangeSkillTemplate(spoolDir: string = '.spool'): SkillT
 3. **Get apply instructions**
 
    \`\`\`bash
-   spool instructions apply --change "<name>" --json
+   spool instructions apply --change "<change-id>" --json
    \`\`\`
 
    This returns:
@@ -533,40 +546,55 @@ export function getFfChangeSkillTemplate(spoolDir: string = '.spool'): SkillTemp
 
 **Steps**
 
-1. **If no clear input provided, ask what they want to build**
+ 1. **If no clear input provided, ask what they want to build**
+ 
+    Use the **AskUserQuestion tool** (open-ended, no preset options) to ask:
+    > "What change do you want to work on? Describe what you want to build or fix."
+ 
+    From their description, derive a kebab-case name (e.g., "add user authentication" → \`add-user-auth\`).
+ 
+    **IMPORTANT**: Do NOT proceed without understanding what the user wants to build.
+ 
+ 2. **Pick or create a module**
+    \`\`\`bash
+    spool module list --json
+    \`\`\`
+    - If the request maps to an existing module, use that module ID
+    - If this is a small, ungrouped task, default to module \`000\`
+    - If no module fits, create one:
+      \`\`\`bash
+      spool module new "<module-name>"
+      \`\`\`
+    - Capture the module ID for the new change
+ 
+ 3. **Create the change directory (module-first)**
+    \`\`\`bash
+    spool new change "<name>" --module <module-id>
+    \`\`\`
+    This creates a scaffolded change at \`.spool/changes/<module-id>-NN_<name>/\`.
+ 
+  4. **Get the artifact build order**
+    \`\`\`bash
+    spool status --change "<change-id>" --json
+    \`\`\`
+ 
+    Parse the JSON to get:
+    - \`applyRequires\`: array of artifact IDs needed before implementation (e.g., \`["tasks"]\`)
+    - \`artifacts\`: list of all artifacts with their status and dependencies
+ 
+  5. **Create artifacts in sequence until apply-ready**
+ 
+    Use the **TodoWrite tool** to track progress through the artifacts.
 
-   Use the **AskUserQuestion tool** (open-ended, no preset options) to ask:
-   > "What change do you want to work on? Describe what you want to build or fix."
-
-   From their description, derive a kebab-case name (e.g., "add user authentication" → \`add-user-auth\`).
-
-   **IMPORTANT**: Do NOT proceed without understanding what the user wants to build.
-
-2. **Create the change directory**
-   \`\`\`bash
-   spool new change "<name>"
-   \`\`\`
-   This creates a scaffolded change at \`.spool/changes/<name>/\`.
-
-3. **Get the artifact build order**
-   \`\`\`bash
-   spool status --change "<name>" --json
-   \`\`\`
-   Parse the JSON to get:
-   - \`applyRequires\`: array of artifact IDs needed before implementation (e.g., \`["tasks"]\`)
-   - \`artifacts\`: list of all artifacts with their status and dependencies
-
-4. **Create artifacts in sequence until apply-ready**
-
-   Use the **TodoWrite tool** to track progress through the artifacts.
 
    Loop through artifacts in dependency order (artifacts with no pending dependencies first):
 
-   a. **For each artifact that is \`ready\` (dependencies satisfied)**:
+    a. **For each artifact that is \`ready\` (dependencies satisfied)**:
       - Get instructions:
         \`\`\`bash
-        spool instructions <artifact-id> --change "<name>" --json
+        spool instructions <artifact-id> --change "<change-id>" --json
         \`\`\`
+
       - The instructions JSON includes:
         - \`template\`: The template content to use
         - \`instruction\`: Schema-specific guidance for this artifact type
@@ -577,7 +605,7 @@ export function getFfChangeSkillTemplate(spoolDir: string = '.spool'): SkillTemp
       - Show brief progress: "✓ Created <artifact-id>"
 
    b. **Continue until all \`applyRequires\` artifacts are complete**
-      - After creating each artifact, re-run \`spool status --change "<name>" --json\`
+      - After creating each artifact, re-run \`spool status --change "<change-id>" --json\`
       - Check if every artifact ID in \`applyRequires\` has \`status: "done"\` in the artifacts array
       - Stop when all \`applyRequires\` artifacts are done
 
@@ -587,7 +615,7 @@ export function getFfChangeSkillTemplate(spoolDir: string = '.spool'): SkillTemp
 
 5. **Show final status**
    \`\`\`bash
-   spool status --change "<name>"
+   spool status --change "<change-id>"
    \`\`\`
 
 **Output**
@@ -770,42 +798,57 @@ export function getProposalSkillTemplate(spoolDir: string = '.spool'): SkillTemp
 
 **Steps**
 
-1. **Understand the change request**
+ 1. **Understand the change request**
    - Listen to what the user wants to build or fix
    - Ask clarifying questions if the request is vague
    - Identify the scope and impact of the change
 
-2. **Check for existing changes**
-   \`\`\`bash
-   spool list --json
-   \`\`\`
-   - If a similar change exists, suggest continuing that instead
-   - Otherwise, proceed with creating a new proposal
+  2. **Check for existing changes**
+    \`\`\`bash
+    spool list --json
+    \`\`\`
+    - If a similar change exists, suggest continuing that instead
+    - Otherwise, proceed with creating a new proposal
 
-3. **Create the change directory**
-   \`\`\`bash
-   spool new change "<name>"
-   \`\`\`
-   - Use a kebab-case name derived from the user's request
-   - This creates the scaffolded structure at \`.spool/changes/<name>/\`
+   3. **Pick or create a module**
+     \`\`\`bash
+     spool module list --json
+     \`\`\`
+     - If the request maps to an existing module, use that module ID
+     - If this is a small, ungrouped task, default to module \`000\`
+     - If no module fits, create one:
+       \`\`\`bash
+       spool module new "<module-name>"
+       \`\`\`
+     - Capture the module ID for the new change
 
-4. **Create the proposal artifact**
-   \`\`\`bash
-   spool instructions proposal --change "<name>"
-   \`\`\`
-   - Get the template and context for creating the proposal.md
-   - Read the template and fill it out based on the user's request:
-     - **Why**: What problem does this solve? What's the business value?
-     - **What Changes**: High-level description of what will change
-     - **Capabilities**: List of new/modified capabilities (each becomes a spec)
-     - **Impact**: How this affects existing functionality, performance, etc.
+   4. **Create the change directory (module-first)**
+     \`\`\`bash
+     spool new change "<name>" --module <module-id>
+     \`\`\`
+     - Use a kebab-case name derived from the user's request
+     - This creates the scaffolded structure at \`.spool/changes/<module-id>-NN_<name>/\`
 
-5. **Show the proposal status**
-   \`\`\`bash
-   spool status --change "<name>"
-   \`\`\`
-   - Show that proposal is complete
-   - Indicate what's next (specs need to be created)
+   5. **Create the proposal artifact**
+     \`\`\`bash
+     spool instructions proposal --change "<change-id>"
+     \`\`\`
+
+    - Get the template and context for creating the proposal.md
+    - Read the template and fill it out based on the user's request:
+      - **Why**: What problem does this solve? What's the business value?
+      - **What Changes**: High-level description of what will change
+      - **Capabilities**: List of new/modified capabilities (each becomes a spec)
+      - **Impact**: How this affects existing functionality, performance, etc.
+
+  6. **Show the proposal status**
+    \`\`\`bash
+    spool status --change "<change-id>"
+    \`\`\`
+    - Show that proposal is complete
+    - Indicate what's next (specs need to be created)
+
+
 
 **Output**
 
@@ -852,14 +895,14 @@ export function getApplySkillTemplate(spoolDir: string = '.spool'): SkillTemplat
 
 2. **Check change is ready for implementation**
    \`\`\`bash
-   spool status --change "<name>" --json
+   spool status --change "<change-id>" --json
    \`\`\`
    - Verify all required artifacts are complete (proposal, specs, design, tasks)
    - If artifacts are missing, suggest using \`spool-continue-change\` first
 
 3. **Get implementation context**
    \`\`\`bash
-   spool instructions apply --change "<name>" --json
+   spool instructions apply --change "<change-id>" --json
    \`\`\`
    - This returns context files, task list, and progress
    - Parse the JSON to understand the current state
@@ -1304,171 +1347,17 @@ export function getOpsxExploreCommandTemplate(): CommandTemplate {
     description: 'Enter explore mode - think through ideas, investigate problems, clarify requirements',
     category: 'Workflow',
     tags: ['workflow', 'explore', 'experimental', 'thinking'],
-    content: `Enter explore mode. Think deeply. Visualize freely. Follow the conversation wherever it goes.
+    content: `Use the \`spool-explore\` skill for OPSX explore mode.
 
-**This is a stance, not a workflow.** There are no fixed steps, no required sequence, no mandatory outputs. You're a thinking partner helping the user explore.
+Steps:
+- Open \`.claude/skills/spool-explore/SKILL.md\`
+- Follow the instructions exactly
 
-**Input**: The argument after \`/opsx:explore\` is whatever the user wants to think about. Could be:
-- A vague idea: "real-time collaboration"
-- A specific problem: "the auth system is getting unwieldy"
-- A change name: "add-dark-mode" (to explore in context of that change)
-- A comparison: "postgres vs sqlite for this"
-- Nothing (just enter explore mode)
-
----
-
-## The Stance
-
-- **Curious, not prescriptive** - Ask questions that emerge naturally, don't follow a script
-- **Visual** - Use ASCII diagrams liberally when they'd help clarify thinking
-- **Adaptive** - Follow interesting threads, pivot when new information emerges
-- **Patient** - Don't rush to conclusions, let the shape of the problem emerge
-- **Grounded** - Explore the actual codebase when relevant, don't just theorize
-
----
-
-## What You Might Do
-
-Depending on what the user brings, you might:
-
-**Explore the problem space**
-- Ask clarifying questions that emerge from what they said
-- Challenge assumptions
-- Reframe the problem
-- Find analogies
-
-**Investigate the codebase**
-- Map existing architecture relevant to the discussion
-- Find integration points
-- Identify patterns already in use
-- Surface hidden complexity
-
-**Compare options**
-- Brainstorm multiple approaches
-- Build comparison tables
-- Sketch tradeoffs
-- Recommend a path (if asked)
-
-**Visualize**
-\`\`\`
-┌─────────────────────────────────────────┐
-│     Use ASCII diagrams liberally        │
-├─────────────────────────────────────────┤
-│                                         │
-│   ┌────────┐         ┌────────┐        │
-│   │ State  │────────▶│ State  │        │
-│   │   A    │         │   B    │        │
-│   └────────┘         └────────┘        │
-│                                         │
-│   System diagrams, state machines,      │
-│   data flows, architecture sketches,    │
-│   dependency graphs, comparison tables  │
-│                                         │
-└─────────────────────────────────────────┘
-\`\`\`
-
-**Surface risks and unknowns**
-- Identify what could go wrong
-- Find gaps in understanding
-- Suggest spikes or investigations
-
----
-
-## Spool Awareness
-
-You have full context of the Spool system. Use it naturally, don't force it.
-
-### Check for context
-
-At the start, quickly check what exists:
-\`\`\`bash
-spool list --json
-\`\`\`
-
-This tells you:
-- If there are active changes
-- Their names, schemas, and status
-- What the user might be working on
-
-If the user mentioned a specific change name, read its artifacts for context.
-
-### When no change exists
-
-Think freely. When insights crystallize, you might offer:
-
-- "This feels solid enough to start a change. Want me to create one?"
-  → Can transition to \`/opsx:new\` or \`/opsx:ff\`
-- Or keep exploring - no pressure to formalize
-
-### When a change exists
-
-If the user mentions a change or you detect one is relevant:
-
-1. **Read existing artifacts for context**
-   - \`.spool/changes/<name>/proposal.md\`
-   - \`.spool/changes/<name>/design.md\`
-   - \`.spool/changes/<name>/tasks.md\`
-   - etc.
-
-2. **Reference them naturally in conversation**
-   - "Your design mentions using Redis, but we just realized SQLite fits better..."
-   - "The proposal scopes this to premium users, but we're now thinking everyone..."
-
-3. **Offer to capture when decisions are made**
-
-   | Insight Type | Where to Capture |
-   |--------------|------------------|
-   | New requirement discovered | \`specs/<capability>/spec.md\` |
-   | Requirement changed | \`specs/<capability>/spec.md\` |
-   | Design decision made | \`design.md\` |
-   | Scope changed | \`proposal.md\` |
-   | New work identified | \`tasks.md\` |
-   | Assumption invalidated | Relevant artifact |
-
-   Example offers:
-   - "That's a design decision. Capture it in design.md?"
-   - "This is a new requirement. Add it to specs?"
-   - "This changes scope. Update the proposal?"
-
-4. **The user decides** - Offer and move on. Don't pressure. Don't auto-capture.
-
----
-
-## What You Don't Have To Do
-
-- Follow a script
-- Ask the same questions every time
-- Produce a specific artifact
-- Reach a conclusion
-- Stay on topic if a tangent is valuable
-- Be brief (this is thinking time)
-
----
-
-## Ending Discovery
-
-There's no required ending. Discovery might:
-
-- **Flow into action**: "Ready to start? \`/opsx:new\` or \`/opsx:ff\`"
-- **Result in artifact updates**: "Updated design.md with these decisions"
-- **Just provide clarity**: User has what they need, moves on
-- **Continue later**: "We can pick this up anytime"
-
-When things crystallize, you might offer a summary - but it's optional. Sometimes the thinking IS the value.
-
----
-
-## Guardrails
-
-- **Don't fake understanding** - If something is unclear, dig deeper
-- **Don't rush** - Discovery is thinking time, not task time
-- **Don't force structure** - Let patterns emerge naturally
-- **Don't auto-capture** - Offer to save insights, don't just do it
-- **Do visualize** - A good diagram is worth many paragraphs
-- **Do explore the codebase** - Ground discussions in reality
-- **Do question assumptions** - Including the user's and your own`
+If the skill is missing, install it first:
+\`spool skills install spool-explore\``
   };
 }
+
 
 /**
  * Template for /opsx:new slash command
@@ -1479,69 +1368,14 @@ export function getOpsxNewCommandTemplate(): CommandTemplate {
     description: 'Start a new change using the experimental artifact workflow (OPSX)',
     category: 'Workflow',
     tags: ['workflow', 'artifacts', 'experimental'],
-    content: `Start a new change using the experimental artifact-driven approach.
+    content: `Use the \`spool-new-change\` skill to start a change in the OPSX workflow.
 
-**Input**: The argument after \`/opsx:new\` is the change name (kebab-case), OR a description of what the user wants to build.
+Steps:
+- Open \`.claude/skills/spool-new-change/SKILL.md\`
+- Follow the instructions exactly (module-first + CLI driven)
 
-**Steps**
-
-1. **If no input provided, ask what they want to build**
-
-   Use the **AskUserQuestion tool** (open-ended, no preset options) to ask:
-   > "What change do you want to work on? Describe what you want to build or fix."
-
-   From their description, derive a kebab-case name (e.g., "add user authentication" → \`add-user-auth\`).
-
-   **IMPORTANT**: Do NOT proceed without understanding what the user wants to build.
-
-2. **Determine the workflow schema**
-
-   Use the default schema (omit \`--schema\`) unless the user explicitly requests a different workflow.
-
-   **Use a different schema only if the user mentions:**
-   - "tdd" or "test-driven" → use \`--schema tdd\`
-   - A specific schema name → use \`--schema <name>\`
-   - "show workflows" or "what workflows" → run \`spool schemas --json\` and let them choose
-
-   **Otherwise**: Omit \`--schema\` to use the default.
-
-3. **Create the change directory**
-   \`\`\`bash
-   spool new change "<name>"
-   \`\`\`
-   Add \`--schema <name>\` only if the user requested a specific workflow.
-   This creates a scaffolded change at \`.spool/changes/<name>/\` with the selected schema.
-
-4. **Show the artifact status**
-   \`\`\`bash
-   spool status --change "<name>"
-   \`\`\`
-   This shows which artifacts need to be created and which are ready (dependencies satisfied).
-
-5. **Get instructions for the first artifact**
-   The first artifact depends on the schema. Check the status output to find the first artifact with status "ready".
-   \`\`\`bash
-   spool instructions <first-artifact-id> --change "<name>"
-   \`\`\`
-   This outputs the template and context for creating the first artifact.
-
-6. **STOP and wait for user direction**
-
-**Output**
-
-After completing the steps, summarize:
-- Change name and location
-- Schema/workflow being used and its artifact sequence
-- Current status (0/N artifacts complete)
-- The template for the first artifact
-- Prompt: "Ready to create the first artifact? Run \`/opsx:continue\` or just describe what this change is about and I'll draft it."
-
-**Guardrails**
-- Do NOT create any artifacts yet - just show the instructions
-- Do NOT advance beyond showing the first artifact template
-- If the name is invalid (not kebab-case), ask for a valid name
-- If a change with that name already exists, suggest using \`/opsx:continue\` instead
-- Pass --schema if using a non-default workflow`
+If the skill is missing, install it first:
+\`spool skills install spool-new-change\``
   };
 }
 
@@ -1554,111 +1388,17 @@ export function getOpsxContinueCommandTemplate(): CommandTemplate {
     description: 'Continue working on a change - create the next artifact (Experimental)',
     category: 'Workflow',
     tags: ['workflow', 'artifacts', 'experimental'],
-    content: `Continue working on a change by creating the next artifact.
+    content: `Use the \`spool-continue-change\` skill to advance the OPSX workflow.
 
-**Input**: Optionally specify \`--change <name>\` after \`/opsx:continue\`. If omitted, MUST prompt for available changes.
+Steps:
+- Open \`.claude/skills/spool-continue-change/SKILL.md\`
+- Follow the instructions exactly
 
-**Steps**
-
-1. **If no change name provided, prompt for selection**
-
-   Run \`spool list --json\` to get available changes sorted by most recently modified. Then use the **AskUserQuestion tool** to let the user select which change to work on.
-
-   Present the top 3-4 most recently modified changes as options, showing:
-   - Change name
-   - Schema (from \`schema\` field if present, otherwise "spec-driven")
-   - Status (e.g., "0/5 tasks", "complete", "no tasks")
-   - How recently it was modified (from \`lastModified\` field)
-
-   Mark the most recently modified change as "(Recommended)" since it's likely what the user wants to continue.
-
-   **IMPORTANT**: Do NOT guess or auto-select a change. Always let the user choose.
-
-2. **Check current status**
-   \`\`\`bash
-   spool status --change "<name>" --json
-   \`\`\`
-   Parse the JSON to understand current state. The response includes:
-   - \`schemaName\`: The workflow schema being used (e.g., "spec-driven", "tdd")
-   - \`artifacts\`: Array of artifacts with their status ("done", "ready", "blocked")
-   - \`isComplete\`: Boolean indicating if all artifacts are complete
-
-3. **Act based on status**:
-
-   ---
-
-   **If all artifacts are complete (\`isComplete: true\`)**:
-   - Congratulate the user
-   - Show final status including the schema used
-   - Suggest: "All artifacts created! You can now implement this change or archive it."
-   - STOP
-
-   ---
-
-   **If artifacts are ready to create** (status shows artifacts with \`status: "ready"\`):
-   - Pick the FIRST artifact with \`status: "ready"\` from the status output
-   - Get its instructions:
-     \`\`\`bash
-     spool instructions <artifact-id> --change "<name>" --json
-     \`\`\`
-   - Parse the JSON to get template, dependencies, and what it unlocks
-   - **Create the artifact file** using the template as a starting point:
-     - Read any completed dependency files for context
-     - Fill in the template based on context and user's goals
-     - Write to the output path specified in instructions
-   - Show what was created and what's now unlocked
-   - STOP after creating ONE artifact
-
-   ---
-
-   **If no artifacts are ready (all blocked)**:
-   - This shouldn't happen with a valid schema
-   - Show status and suggest checking for issues
-
-4. **After creating an artifact, show progress**
-   \`\`\`bash
-   spool status --change "<name>"
-   \`\`\`
-
-**Output**
-
-After each invocation, show:
-- Which artifact was created
-- Schema workflow being used
-- Current progress (N/M complete)
-- What artifacts are now unlocked
-- Prompt: "Run \`/opsx:continue\` to create the next artifact"
-
-**Artifact Creation Guidelines**
-
-The artifact types and their purpose depend on the schema. Use the \`instruction\` field from the instructions output to understand what to create.
-
-Common artifact patterns:
-
-**spec-driven schema** (proposal → specs → design → tasks):
-- **proposal.md**: Ask user about the change if not clear. Fill in Why, What Changes, Capabilities, Impact.
-  - The Capabilities section is critical - each capability listed will need a spec file.
-- **specs/*.md**: Create one spec per capability listed in the proposal.
-- **design.md**: Document technical decisions, architecture, and implementation approach.
-- **tasks.md**: Break down implementation into checkboxed tasks.
-
-**tdd schema** (spec → tests → implementation → docs):
-- **spec.md**: Feature specification defining what to build.
-- **tests/*.test.ts**: Write tests BEFORE implementation (TDD red phase).
-- **src/*.ts**: Implement to make tests pass (TDD green phase).
-- **docs/*.md**: Document the implemented feature.
-
-For other schemas, follow the \`instruction\` field from the CLI output.
-
-**Guardrails**
-- Create ONE artifact per invocation
-- Always read dependency artifacts before creating a new one
-- Never skip artifacts or create out of order
-- If context is unclear, ask the user before creating
-- Verify the artifact file exists after writing before marking progress
-- Use the schema's artifact sequence, don't assume specific artifact names`
+If the skill is missing, install it first:
+\`spool skills install spool-continue-change\``
   };
 }
+
 
 /**
  * Template for /opsx:apply slash command
@@ -1669,155 +1409,17 @@ export function getOpsxApplyCommandTemplate(): CommandTemplate {
     description: 'Implement tasks from an Spool change (Experimental)',
     category: 'Workflow',
     tags: ['workflow', 'artifacts', 'experimental'],
-    content: `Implement tasks from an Spool change.
+    content: `Use the \`spool-apply-change\` skill to implement tasks for an OPSX change.
 
-**Input**: Optionally specify \`--change <name>\` after \`/opsx:apply\`. If omitted, MUST prompt for available changes.
+Steps:
+- Open \`.claude/skills/spool-apply-change/SKILL.md\`
+- Follow the instructions exactly
 
-**Steps**
-
-1. **If no change name provided, prompt for selection**
-
-   Run \`spool list --json\` to get available changes. Use the **AskUserQuestion tool** to let the user select.
-
-   Show changes that are implementation-ready (have tasks artifact).
-   Include the schema used for each change if available.
-   Mark changes with incomplete tasks as "(In Progress)".
-
-   **IMPORTANT**: Do NOT guess or auto-select a change. Always let the user choose.
-
-2. **Check status to understand the schema**
-   \`\`\`bash
-   spool status --change "<name>" --json
-   \`\`\`
-   Parse the JSON to understand:
-   - \`schemaName\`: The workflow being used (e.g., "spec-driven", "tdd")
-   - Which artifact contains the tasks (typically "tasks" for spec-driven, check status for others)
-
-3. **Get apply instructions**
-
-   \`\`\`bash
-   spool instructions apply --change "<name>" --json
-   \`\`\`
-
-   This returns:
-   - Context file paths (varies by schema)
-   - Progress (total, complete, remaining)
-   - Task list with status
-   - Dynamic instruction based on current state
-
-   **Handle states:**
-   - If \`state: "blocked"\` (missing artifacts): show message, suggest using \`/opsx:continue\`
-   - If \`state: "all_done"\`: congratulate, suggest archive
-   - Otherwise: proceed to implementation
-
-4. **Read context files**
-
-   Read the files listed in \`contextFiles\` from the apply instructions output.
-   The files depend on the schema being used:
-   - **spec-driven**: proposal, specs, design, tasks
-   - **tdd**: spec, tests, implementation, docs
-   - Other schemas: follow the contextFiles from CLI output
-
-5. **Show current progress**
-
-   Display:
-   - Schema being used
-   - Progress: "N/M tasks complete"
-   - Remaining tasks overview
-   - Dynamic instruction from CLI
-
-6. **Implement tasks (loop until done or blocked)**
-
-   For each pending task:
-   - Show which task is being worked on
-   - Make the code changes required
-   - Keep changes minimal and focused
-   - Mark task complete in the tasks file: \`- [ ]\` → \`- [x]\`
-   - Continue to next task
-
-   **Pause if:**
-   - Task is unclear → ask for clarification
-   - Implementation reveals a design issue → suggest updating artifacts
-   - Error or blocker encountered → report and wait for guidance
-   - User interrupts
-
-7. **On completion or pause, show status**
-
-   Display:
-   - Tasks completed this session
-   - Overall progress: "N/M tasks complete"
-   - If all done: suggest archive
-   - If paused: explain why and wait for guidance
-
-**Output During Implementation**
-
-\`\`\`
-## Implementing: <change-name> (schema: <schema-name>)
-
-Working on task 3/7: <task description>
-[...implementation happening...]
-✓ Task complete
-
-Working on task 4/7: <task description>
-[...implementation happening...]
-✓ Task complete
-\`\`\`
-
-**Output On Completion**
-
-\`\`\`
-## Implementation Complete
-
-**Change:** <change-name>
-**Schema:** <schema-name>
-**Progress:** 7/7 tasks complete ✓
-
-### Completed This Session
-- [x] Task 1
-- [x] Task 2
-...
-
-All tasks complete! Ready to archive this change.
-\`\`\`
-
-**Output On Pause (Issue Encountered)**
-
-\`\`\`
-## Implementation Paused
-
-**Change:** <change-name>
-**Schema:** <schema-name>
-**Progress:** 4/7 tasks complete
-
-### Issue Encountered
-<description of the issue>
-
-**Options:**
-1. <option 1>
-2. <option 2>
-3. Other approach
-
-What would you like to do?
-\`\`\`
-
-**Guardrails**
-- Keep going through tasks until done or blocked
-- Always read context files before starting (from the apply instructions output)
-- If task is ambiguous, pause and ask before implementing
-- If implementation reveals issues, pause and suggest artifact updates
-- Keep code changes minimal and scoped to each task
-- Update task checkbox immediately after completing each task
-- Pause on errors, blockers, or unclear requirements - don't guess
-- Use contextFiles from CLI output, don't assume specific file names
-
-**Fluid Workflow Integration**
-
-This skill supports the "actions on a change" model:
-
-- **Can be invoked anytime**: Before all artifacts are done (if tasks exist), after partial implementation, interleaved with other actions
-- **Allows artifact updates**: If implementation reveals design issues, suggest updating artifacts - not phase-locked, work fluidly`
+If the skill is missing, install it first:
+\`spool skills install spool-apply-change\``
   };
 }
+
 
 
 /**
@@ -1829,90 +1431,14 @@ export function getOpsxFfCommandTemplate(): CommandTemplate {
     description: 'Create a change and generate all artifacts needed for implementation in one go',
     category: 'Workflow',
     tags: ['workflow', 'artifacts', 'experimental'],
-    content: `Fast-forward through artifact creation - generate everything needed to start implementation.
+    content: `Use the \`spool-ff-change\` skill to fast-forward artifact creation.
 
-**Input**: The argument after \`/opsx:ff\` is the change name (kebab-case), OR a description of what the user wants to build.
+Steps:
+- Open \`.claude/skills/spool-ff-change/SKILL.md\`
+- Follow the instructions exactly (module-first + CLI driven)
 
-**Steps**
-
-1. **If no input provided, ask what they want to build**
-
-   Use the **AskUserQuestion tool** (open-ended, no preset options) to ask:
-   > "What change do you want to work on? Describe what you want to build or fix."
-
-   From their description, derive a kebab-case name (e.g., "add user authentication" → \`add-user-auth\`).
-
-   **IMPORTANT**: Do NOT proceed without understanding what the user wants to build.
-
-2. **Create the change directory**
-   \`\`\`bash
-   spool new change "<name>"
-   \`\`\`
-   This creates a scaffolded change at \`.spool/changes/<name>/\`.
-
-3. **Get the artifact build order**
-   \`\`\`bash
-   spool status --change "<name>" --json
-   \`\`\`
-   Parse the JSON to get:
-   - \`applyRequires\`: array of artifact IDs needed before implementation (e.g., \`["tasks"]\`)
-   - \`artifacts\`: list of all artifacts with their status and dependencies
-
-4. **Create artifacts in sequence until apply-ready**
-
-   Use the **TodoWrite tool** to track progress through the artifacts.
-
-   Loop through artifacts in dependency order (artifacts with no pending dependencies first):
-
-   a. **For each artifact that is \`ready\` (dependencies satisfied)**:
-      - Get instructions:
-        \`\`\`bash
-        spool instructions <artifact-id> --change "<name>" --json
-        \`\`\`
-      - The instructions JSON includes:
-        - \`template\`: The template content to use
-        - \`instruction\`: Schema-specific guidance for this artifact type
-        - \`outputPath\`: Where to write the artifact
-        - \`dependencies\`: Completed artifacts to read for context
-      - Read any completed dependency files for context
-      - Create the artifact file following the schema's \`instruction\`
-      - Show brief progress: "✓ Created <artifact-id>"
-
-   b. **Continue until all \`applyRequires\` artifacts are complete**
-      - After creating each artifact, re-run \`spool status --change "<name>" --json\`
-      - Check if every artifact ID in \`applyRequires\` has \`status: "done"\` in the artifacts array
-      - Stop when all \`applyRequires\` artifacts are done
-
-   c. **If an artifact requires user input** (unclear context):
-      - Use **AskUserQuestion tool** to clarify
-      - Then continue with creation
-
-5. **Show final status**
-   \`\`\`bash
-   spool status --change "<name>"
-   \`\`\`
-
-**Output**
-
-After completing all artifacts, summarize:
-- Change name and location
-- List of artifacts created with brief descriptions
-- What's ready: "All artifacts created! Ready for implementation."
-- Prompt: "Run \`/opsx:apply\` to start implementing."
-
-**Artifact Creation Guidelines**
-
-- Follow the \`instruction\` field from \`spool instructions\` for each artifact type
-- The schema defines what each artifact should contain - follow it
-- Read dependency artifacts for context before creating new ones
-- Use the \`template\` as a starting point, filling in based on context
-
-**Guardrails**
-- Create ALL artifacts needed for implementation (as defined by schema's \`apply.requires\`)
-- Always read dependency artifacts before creating a new one
-- If context is critically unclear, ask the user - but prefer making reasonable decisions to keep momentum
-- If a change with that name already exists, ask if user wants to continue it or create a new one
-- Verify each artifact file exists after writing before proceeding to next`
+If the skill is missing, install it first:
+\`spool skills install spool-ff-change\``
   };
 }
 
@@ -1941,7 +1467,7 @@ export function getArchiveChangeSkillTemplate(spoolDir: string = '.spool'): Skil
 
 2. **Check artifact completion status**
 
-   Run \`spool status --change "<name>" --json\` to check artifact completion.
+   Run \`spool status --change "<change-id>" --json\` to check artifact completion.
 
    Parse the JSON to understand:
    - \`schemaName\`: The workflow being used
@@ -2057,133 +1583,14 @@ export function getOpsxSyncCommandTemplate(): CommandTemplate {
     description: 'Sync delta specs from a change to main specs',
     category: 'Workflow',
     tags: ['workflow', 'specs', 'experimental'],
-    content: `Sync delta specs from a change to main specs.
+    content: `Use the \`spool-sync-specs\` skill to sync delta specs.
 
-This is an **agent-driven** operation - you will read delta specs and directly edit main specs to apply the changes. This allows intelligent merging (e.g., adding a scenario without copying the entire requirement).
+Steps:
+- Open \`.claude/skills/spool-sync-specs/SKILL.md\`
+- Follow the instructions exactly
 
-**Input**: Optionally specify \`--change <name>\` after \`/opsx:sync\`. If omitted, MUST prompt for available changes.
-
-**Steps**
-
-1. **If no change name provided, prompt for selection**
-
-   Run \`spool list --json\` to get available changes. Use the **AskUserQuestion tool** to let the user select.
-
-   Show changes that have delta specs (under \`specs/\` directory).
-
-   **IMPORTANT**: Do NOT guess or auto-select a change. Always let the user choose.
-
-2. **Find delta specs**
-
-   Look for delta spec files in \`.spool/changes/<name>/specs/*/spec.md\`.
-
-   Each delta spec file contains sections like:
-   - \`## ADDED Requirements\` - New requirements to add
-   - \`## MODIFIED Requirements\` - Changes to existing requirements
-   - \`## REMOVED Requirements\` - Requirements to remove
-   - \`## RENAMED Requirements\` - Requirements to rename (FROM:/TO: format)
-
-   If no delta specs found, inform user and stop.
-
-3. **For each delta spec, apply changes to main specs**
-
-   For each capability with a delta spec at \`.spool/changes/<name>/specs/<capability>/spec.md\`:
-
-   a. **Read the delta spec** to understand the intended changes
-
-   b. **Read the main spec** at \`.spool/specs/<capability>/spec.md\` (may not exist yet)
-
-   c. **Apply changes intelligently**:
-
-      **ADDED Requirements:**
-      - If requirement doesn't exist in main spec → add it
-      - If requirement already exists → update it to match (treat as implicit MODIFIED)
-
-      **MODIFIED Requirements:**
-      - Find the requirement in main spec
-      - Apply the changes - this can be:
-        - Adding new scenarios (don't need to copy existing ones)
-        - Modifying existing scenarios
-        - Changing the requirement description
-      - Preserve scenarios/content not mentioned in the delta
-
-      **REMOVED Requirements:**
-      - Remove the entire requirement block from main spec
-
-      **RENAMED Requirements:**
-      - Find the FROM requirement, rename to TO
-
-   d. **Create new main spec** if capability doesn't exist yet:
-      - Create \`.spool/specs/<capability>/spec.md\`
-      - Add Purpose section (can be brief, mark as TBD)
-      - Add Requirements section with the ADDED requirements
-
-4. **Show summary**
-
-   After applying all changes, summarize:
-   - Which capabilities were updated
-   - What changes were made (requirements added/modified/removed/renamed)
-
-**Delta Spec Format Reference**
-
-\`\`\`markdown
-## ADDED Requirements
-
-### Requirement: New Feature
-The system SHALL do something new.
-
-#### Scenario: Basic case
-- **WHEN** user does X
-- **THEN** system does Y
-
-## MODIFIED Requirements
-
-### Requirement: Existing Feature
-#### Scenario: New scenario to add
-- **WHEN** user does A
-- **THEN** system does B
-
-## REMOVED Requirements
-
-### Requirement: Deprecated Feature
-
-## RENAMED Requirements
-
-- FROM: \`### Requirement: Old Name\`
-- TO: \`### Requirement: New Name\`
-\`\`\`
-
-**Key Principle: Intelligent Merging**
-
-Unlike programmatic merging, you can apply **partial updates**:
-- To add a scenario, just include that scenario under MODIFIED - don't copy existing scenarios
-- The delta represents *intent*, not a wholesale replacement
-- Use your judgment to merge changes sensibly
-
-**Output On Success**
-
-\`\`\`
-## Specs Synced: <change-name>
-
-Updated main specs:
-
-**<capability-1>**:
-- Added requirement: "New Feature"
-- Modified requirement: "Existing Feature" (added 1 scenario)
-
-**<capability-2>**:
-- Created new spec file
-- Added requirement: "Another Feature"
-
-Main specs are now updated. The change remains active - archive when implementation is complete.
-\`\`\`
-
-**Guardrails**
-- Read both delta and main specs before making changes
-- Preserve existing content not mentioned in delta
-- If something is unclear, ask for clarification
-- Show what you're changing as you go
-- The operation should be idempotent - running twice should give same result`
+If the skill is missing, install it first:
+\`spool skills install spool-sync-specs\``
   };
 }
 
@@ -2196,174 +1603,14 @@ export function getOpsxArchiveCommandTemplate(): CommandTemplate {
     description: 'Archive a completed change in the experimental workflow',
     category: 'Workflow',
     tags: ['workflow', 'archive', 'experimental'],
-    content: `Archive a completed change in the experimental workflow.
+    content: `Use the \`spool-archive-change\` skill to archive an OPSX change.
 
-**Input**: Optionally specify \`--change <name>\` after \`/opsx:archive\`. If omitted, MUST prompt for available changes.
+Steps:
+- Open \`.claude/skills/spool-archive-change/SKILL.md\`
+- Follow the instructions exactly
 
-**Steps**
-
-1. **If no change name provided, prompt for selection**
-
-   Run \`spool list --json\` to get available changes. Use the **AskUserQuestion tool** to let the user select.
-
-   Show only active changes (not already archived).
-   Include the schema used for each change if available.
-
-   **IMPORTANT**: Do NOT guess or auto-select a change. Always let the user choose.
-
-2. **Check artifact completion status**
-
-   Run \`spool status --change "<name>" --json\` to check artifact completion.
-
-   Parse the JSON to understand:
-   - \`schemaName\`: The workflow being used
-   - \`artifacts\`: List of artifacts with their status (\`done\` or other)
-
-   **If any artifacts are not \`done\`:**
-   - Display warning listing incomplete artifacts
-   - Prompt user for confirmation to continue
-   - Proceed if user confirms
-
-3. **Check task completion status**
-
-   Read the tasks file (typically \`tasks.md\`) to check for incomplete tasks.
-
-   Count tasks marked with \`- [ ]\` (incomplete) vs \`- [x]\` (complete).
-
-   **If incomplete tasks found:**
-   - Display warning showing count of incomplete tasks
-   - Prompt user for confirmation to continue
-   - Proceed if user confirms
-
-   **If no tasks file exists:** Proceed without task-related warning.
-
-4. **Check if delta specs need syncing**
-
-   Check if \`specs/\` directory exists in the change with spec files.
-
-   **If delta specs exist, perform a quick sync check:**
-
-   a. **For each delta spec** at \`.spool/changes/<name>/specs/<capability>/spec.md\`:
-      - Extract requirement names (lines matching \`### Requirement: <name>\`)
-      - Note which sections exist (ADDED, MODIFIED, REMOVED)
-
-   b. **Check corresponding main spec** at \`.spool/specs/<capability>/spec.md\`:
-      - If main spec doesn't exist → needs sync
-      - If main spec exists, check if ADDED requirement names appear in it
-      - If any ADDED requirements are missing from main spec → needs sync
-
-   c. **Report findings:**
-
-      **If sync needed:**
-      \`\`\`
-      ⚠️ Delta specs may not be synced:
-      - specs/auth/spec.md → Main spec missing requirement "Token Refresh"
-      - specs/api/spec.md → Main spec doesn't exist yet
-
-      Would you like to sync now before archiving?
-      \`\`\`
-      - Use **AskUserQuestion tool** with options: "Sync now", "Archive without syncing"
-      - If user chooses sync, execute \`/opsx:sync\` logic
-
-      **If already synced (all requirements found):**
-      - Proceed without prompting (specs appear to be in sync)
-
-   **If no delta specs exist:** Proceed without sync-related checks.
-
-5. **Perform the archive**
-
-   Create the archive directory if it doesn't exist:
-   \`\`\`bash
-   mkdir -p .spool/changes/archive
-   \`\`\`
-
-   Generate target name using current date: \`YYYY-MM-DD-<change-name>\`
-
-   **Check if target already exists:**
-   - If yes: Fail with error, suggest renaming existing archive or using different date
-   - If no: Move the change directory to archive
-
-   \`\`\`bash
-   mv .spool/changes/<name> .spool/changes/archive/YYYY-MM-DD-<name>
-   \`\`\`
-
-6. **Display summary**
-
-   Show archive completion summary including:
-   - Change name
-   - Schema that was used
-   - Archive location
-   - Spec sync status (synced / not synced / no delta specs)
-   - Note about any warnings (incomplete artifacts/tasks)
-
-**Output On Success**
-
-\`\`\`
-## Archive Complete
-
-**Change:** <change-name>
-**Schema:** <schema-name>
-**Archived to:** .spool/changes/archive/YYYY-MM-DD-<name>/
-**Specs:** ✓ Synced to main specs
-
-All artifacts complete. All tasks complete.
-\`\`\`
-
-**Output On Success (No Delta Specs)**
-
-\`\`\`
-## Archive Complete
-
-**Change:** <change-name>
-**Schema:** <schema-name>
-**Archived to:** .spool/changes/archive/YYYY-MM-DD-<name>/
-**Specs:** No delta specs
-
-All artifacts complete. All tasks complete.
-\`\`\`
-
-**Output On Success With Warnings**
-
-\`\`\`
-## Archive Complete (with warnings)
-
-**Change:** <change-name>
-**Schema:** <schema-name>
-**Archived to:** .spool/changes/archive/YYYY-MM-DD-<name>/
-**Specs:** ⚠️ Not synced
-
-**Warnings:**
-- Archived with 2 incomplete artifacts
-- Archived with 3 incomplete tasks
-- Delta specs were not synced (user chose to skip)
-
-Review the archive if this was not intentional.
-\`\`\`
-
-**Output On Error (Archive Exists)**
-
-\`\`\`
-## Archive Failed
-
-**Change:** <change-name>
-**Target:** .spool/changes/archive/YYYY-MM-DD-<name>/
-
-Target archive directory already exists.
-
-**Options:**
-1. Rename the existing archive
-2. Delete the existing archive if it's a duplicate
-3. Wait until a different date to archive
-\`\`\`
-
-**Guardrails**
-- Always prompt for change selection if not provided
-- Use artifact graph (spool status --json) for completion checking
-- Don't block archive on warnings - just inform and confirm
-- Preserve .spool.yaml when moving to archive (it moves with the directory)
-- Quick sync check: look for requirement names in delta specs, verify they exist in main specs
-- Show clear summary of what happened
- - If sync is requested, use /opsx:sync approach (agent-driven)`
+If the skill is missing, install it first:
+\`spool skills install spool-archive-change\``
   };
 }
 

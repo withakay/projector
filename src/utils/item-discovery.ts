@@ -13,6 +13,7 @@ import {
   getSpecsPath,
   getArchivePath,
 } from '../core/project-config.js';
+import { ModuleParser } from '../core/parsers/module-parser.js';
 
 export interface ModuleInfo {
   id: string;
@@ -98,6 +99,28 @@ export async function getActiveChangeIds(root: string = process.cwd()): Promise<
   }
 }
 
+async function getChangeDirectoryIds(changesPath: string): Promise<string[]> {
+  try {
+    const entries = await fs.readdir(changesPath, { withFileTypes: true });
+    return entries
+      .filter(entry => entry.isDirectory() && !entry.name.startsWith('.') && entry.name !== 'archive')
+      .map(entry => entry.name)
+      .sort();
+  } catch {
+    return [];
+  }
+}
+
+export async function getAllChangeIds(root: string = process.cwd()): Promise<string[]> {
+  const changesPath = getChangesPath(root);
+  const archivePath = getArchivePath(root);
+  const [active, archived] = await Promise.all([
+    getChangeDirectoryIds(changesPath),
+    getChangeDirectoryIds(archivePath),
+  ]);
+  return Array.from(new Set([...active, ...archived])).sort();
+}
+
 export async function getSpecIds(root: string = process.cwd()): Promise<string[]> {
   const specsPath = getSpecsPath(root);
   const result: string[] = [];
@@ -138,5 +161,30 @@ export async function getArchivedChangeIds(root: string = process.cwd()): Promis
   } catch {
     return [];
   }
+}
+
+export async function getModuleChangeIndex(root: string = process.cwd()): Promise<Map<string, string[]>> {
+  const modules = await getModuleInfo(root);
+  const changeMap = new Map<string, string[]>();
+
+  await Promise.all(modules.map(async (moduleInfo) => {
+    try {
+      const moduleFile = path.join(moduleInfo.path, 'module.md');
+      const content = await fs.readFile(moduleFile, 'utf-8');
+      const parser = new ModuleParser(content, moduleInfo.fullName);
+      const parsed = parser.parseModule();
+      for (const change of parsed.changes) {
+        const existing = changeMap.get(change.id) ?? [];
+        if (!existing.includes(moduleInfo.id)) {
+          existing.push(moduleInfo.id);
+          changeMap.set(change.id, existing);
+        }
+      }
+    } catch {
+      // ignore parse errors; module validation will surface
+    }
+  }));
+
+  return changeMap;
 }
 
