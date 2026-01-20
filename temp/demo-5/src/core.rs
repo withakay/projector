@@ -24,3 +24,29 @@ impl Task {
         Some(Self { id, text, done })
     }
 }
+
+pub fn add_task(tasks: &mut Vec<Task>, text: String) -> Task {
+    let next_id = tasks.iter().map(|task| task.id).max().unwrap_or(0) + 1;
+    let task = Task {
+        id: next_id,
+        text,
+        done: false,
+    };
+    tasks.push(task.clone());
+    task
+}
+
+pub fn mark_done(tasks: &mut [Task], id: u64) -> bool {
+    if let Some(task) = tasks.iter_mut().find(|task| task.id == id) {
+        task.done = true;
+        true
+    } else {
+        false
+    }
+}
+
+pub fn remove_task(tasks: &mut Vec<Task>, id: u64) -> bool {
+    let before = tasks.len();
+    tasks.retain(|task| task.id != id);
+    before != tasks.len()
+}
