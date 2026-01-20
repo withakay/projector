@@ -8,3 +8,4 @@
 
 ## Changes
 - [ ] 002-01_storage-load
+- [ ] 002-02_storage-save

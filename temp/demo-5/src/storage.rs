@@ -1,5 +1,5 @@
 use std::fs;
-use std::io::{self, BufRead};
+use std::io::{self, BufRead, Write};
 use std::path::{Path, PathBuf};
 
 use crate::core::Task;
@@ -34,4 +34,19 @@ pub fn load_tasks() -> io::Result<Vec<Task>> {
         .collect();
 
     Ok(tasks)
+}
+
+pub fn save_tasks(tasks: &[Task]) -> io::Result<()> {
+    let path = data_path();
+    ensure_data_dir(&path)?;
+    let temp_path = path.with_extension("txt.tmp");
+    let mut file = fs::File::create(&temp_path)?;
+
+    for task in tasks {
+        writeln!(file, "{}", task.format_line())?;
+    }
+
+    file.sync_all()?;
+    fs::rename(temp_path, path)?;
+    Ok(())
 }
