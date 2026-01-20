@@ -8,3 +8,4 @@
 
 ## Changes
 - [ ] 003-01_cli-scaffold
+- [ ] 003-02_cli-wire
