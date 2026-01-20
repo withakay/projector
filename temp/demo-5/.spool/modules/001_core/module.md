@@ -7,4 +7,4 @@
 - *
 
 ## Changes
-<!-- Changes will be listed here as they are created -->
+- [ ] 001-01_core-task-model
