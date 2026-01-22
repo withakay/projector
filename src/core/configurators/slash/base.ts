@@ -43,15 +43,9 @@ export abstract class SlashCommandConfigurator {
       const filePath = FileSystemUtils.joinPath(projectPath, target.path);
 
       if (await FileSystemUtils.fileExists(filePath)) {
-        await this.updateBody(filePath, body);
+        await this.rewriteFullFile(filePath, target.id, body, spoolDir);
       } else {
-        const frontmatter = this.getFrontmatter(target.id, spoolDir);
-        const sections: string[] = [];
-        if (frontmatter) {
-          sections.push(frontmatter.trim());
-        }
-        sections.push(`${SPOOL_MARKERS.start}\n${body}\n${SPOOL_MARKERS.end}`);
-        const content = sections.join('\n') + '\n';
+        const content = this.buildFullFileContent(target.id, body, spoolDir);
         await FileSystemUtils.writeFile(filePath, content);
       }
 
@@ -61,20 +55,21 @@ export abstract class SlashCommandConfigurator {
     return createdOrUpdated;
   }
 
-  async updateExisting(projectPath: string, spoolDir: string): Promise<string[]> {
-    const updated: string[] = [];
+   async updateExisting(projectPath: string, spoolDir: string): Promise<string[]> {
+     const updated: string[] = [];
 
-    for (const target of this.getTargets()) {
-      const filePath = FileSystemUtils.joinPath(projectPath, target.path);
-      if (await FileSystemUtils.fileExists(filePath)) {
-        const body = this.getBody(target.id, spoolDir);
-        await this.updateBody(filePath, body);
-        updated.push(target.path);
-      }
-    }
+     for (const target of this.getTargets()) {
+       const filePath = FileSystemUtils.joinPath(projectPath, target.path);
+       if (await FileSystemUtils.fileExists(filePath)) {
+         const body = this.getBody(target.id, spoolDir);
+         await this.rewriteFullFile(filePath, target.id, body, spoolDir);
+         updated.push(target.path);
+       }
+     }
 
-    return updated;
-  }
+     return updated;
+   }
+
 
   protected abstract getRelativePath(id: SlashCommandId): string;
   protected abstract getFrontmatter(id: SlashCommandId, spoolDir?: string): string | undefined;
@@ -90,19 +85,29 @@ export abstract class SlashCommandConfigurator {
     return FileSystemUtils.joinPath(projectPath, rel);
   }
 
-  protected async updateBody(filePath: string, body: string): Promise<void> {
-    const content = await FileSystemUtils.readFile(filePath);
-    const startIndex = content.indexOf(SPOOL_MARKERS.start);
-    const endIndex = content.indexOf(SPOOL_MARKERS.end);
+   protected buildFullFileContent(id: SlashCommandId, body: string, spoolDir: string): string {
+     const frontmatter = this.getFrontmatter(id, spoolDir);
+     const sections: string[] = [];
 
-    if (startIndex === -1 || endIndex === -1 || endIndex <= startIndex) {
-      throw new Error(`Missing Spool markers in ${filePath}`);
-    }
+     if (frontmatter) {
+       sections.push(frontmatter.trim());
+     }
 
-    const before = content.slice(0, startIndex + SPOOL_MARKERS.start.length);
-    const after = content.slice(endIndex);
-    const updatedContent = `${before}\n${body}\n${after}`;
+     sections.push(`${SPOOL_MARKERS.start}\n${body}\n${SPOOL_MARKERS.end}`);
+     return sections.join('\n') + '\n';
+   }
 
-    await FileSystemUtils.writeFile(filePath, updatedContent);
-  }
+   protected async rewriteFullFile(filePath: string, id: SlashCommandId, body: string, spoolDir: string): Promise<void> {
+     const existing = await FileSystemUtils.readFile(filePath);
+     const startIndex = existing.indexOf(SPOOL_MARKERS.start);
+     const endIndex = existing.indexOf(SPOOL_MARKERS.end);
+
+     if (startIndex === -1 || endIndex === -1 || endIndex <= startIndex) {
+       throw new Error(`Missing Spool markers in ${filePath}`);
+     }
+
+     const updatedContent = this.buildFullFileContent(id, body, spoolDir);
+     await FileSystemUtils.writeFile(filePath, updatedContent);
+   }
+
 }
