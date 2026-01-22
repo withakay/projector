@@ -5,8 +5,15 @@ import { SlashCommandRegistry } from './configurators/slash/registry.js';
 import { agentsTemplate } from './templates/agents-template.js';
 import { getSpoolPath, getSpoolDirName } from './project-config.js';
 
+export type UpdateSummary = {
+  instructionFiles: string[];
+  aiToolFiles: string[];
+  slashCommands: string[];
+  failed: string[];
+};
+
 export class UpdateCommand {
-  async execute(projectPath: string): Promise<void> {
+  async execute(projectPath: string, options?: { json?: boolean }): Promise<void> {
     const resolvedProjectPath = path.resolve(projectPath);
     const spoolDirName = getSpoolDirName(resolvedProjectPath);
     const spoolPath = getSpoolPath(resolvedProjectPath);
@@ -87,7 +94,6 @@ export class UpdateCommand {
       }
     }
 
-    const summaryParts: string[] = [];
     const instructionFiles: string[] = [`${spoolDirName}/AGENTS.md`];
 
     if (updatedFiles.includes('AGENTS.md')) {
@@ -96,33 +102,65 @@ export class UpdateCommand {
       );
     }
 
-    summaryParts.push(
-      `Updated Spool instructions (${instructionFiles.join(', ')})`
-    );
-
     const aiToolFiles = updatedFiles.filter((file) => file !== 'AGENTS.md');
-    if (aiToolFiles.length > 0) {
-      summaryParts.push(`Updated AI tool files: ${aiToolFiles.join(', ')}`);
-    }
 
-    if (updatedSlashFiles.length > 0) {
-      // Normalize to forward slashes for cross-platform log consistency
-      const normalized = updatedSlashFiles.map((p) => FileSystemUtils.toPosixPath(p));
-      summaryParts.push(`Updated slash commands: ${normalized.join(', ')}`);
-    }
+    // Normalize to forward slashes for cross-platform log consistency
+    const slashCommands = updatedSlashFiles.map((p) => FileSystemUtils.toPosixPath(p));
 
-    const failedItems = [
+    const failed = [
       ...failedFiles,
-      ...failedSlashTools.map(
-        (toolId) => `slash command refresh (${toolId})`
-      ),
+      ...failedSlashTools.map((toolId) => `slash command refresh (${toolId})`),
     ];
 
-    if (failedItems.length > 0) {
-      summaryParts.push(`Failed to update: ${failedItems.join(', ')}`);
+    const summary: UpdateSummary = {
+      instructionFiles,
+      aiToolFiles,
+      slashCommands,
+      failed,
+    };
+
+    if (options?.json) {
+      console.log(JSON.stringify(summary, null, 2));
+      return;
     }
 
-    console.log(summaryParts.join(' | '));
+    const lines: string[] = [];
+    lines.push('Spool update complete');
+    lines.push('');
+
+    if (summary.instructionFiles.length > 0) {
+      lines.push(`Instructions (${summary.instructionFiles.length})`);
+      for (const file of summary.instructionFiles) {
+        lines.push(`- ${file}`);
+      }
+      lines.push('');
+    }
+
+    if (summary.aiToolFiles.length > 0) {
+      lines.push(`AI tool files (${summary.aiToolFiles.length})`);
+      for (const file of summary.aiToolFiles) {
+        lines.push(`- ${file}`);
+      }
+      lines.push('');
+    }
+
+    if (summary.slashCommands.length > 0) {
+      lines.push(`Slash commands (${summary.slashCommands.length})`);
+      for (const file of summary.slashCommands) {
+        lines.push(`- ${file}`);
+      }
+      lines.push('');
+    }
+
+    if (summary.failed.length > 0) {
+      lines.push(`Failed (${summary.failed.length})`);
+      for (const item of summary.failed) {
+        lines.push(`- ${item}`);
+      }
+      lines.push('');
+    }
+
+    process.stdout.write(lines.join('\n'));
 
     // No additional notes
   }

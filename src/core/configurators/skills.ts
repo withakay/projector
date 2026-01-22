@@ -19,8 +19,10 @@ import {
   getArchiveSkillTemplate,
   getResearchSkillTemplate,
   getReviewSkillTemplate,
+  getCommitSkillTemplate,
   // Experimental workflow skills
   getExploreSkillTemplate,
+
   getNewChangeSkillTemplate,
   getContinueChangeSkillTemplate,
   getApplyChangeSkillTemplate,
@@ -111,6 +113,11 @@ export class SkillsConfigurator implements ToolConfigurator {
         id: 'spool-review',
         template: applySpoolDirToTemplate(getReviewSkillTemplate(spoolDir), spoolDir),
         directory: 'spool-review',
+      },
+      {
+        id: 'spool-commit',
+        template: applySpoolDirToTemplate(getCommitSkillTemplate(spoolDir), spoolDir),
+        directory: 'spool-commit',
       },
 ];
 

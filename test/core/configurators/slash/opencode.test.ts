@@ -47,5 +47,32 @@ describe('slash command templates with spoolDir', () => {
 
       expect(frontmatter).toContain('.my-spool/research/investigations/');
     });
+
+    it('should generate valid yaml fences without indentation', () => {
+      const configurator = new OpenCodeSlashCommandConfigurator();
+
+      const ids = ['proposal', 'apply', 'archive', 'research', 'review'] as const;
+
+      for (const id of ids) {
+        const frontmatter = (configurator as any).getFrontmatter(id, '.spool');
+
+        expect(frontmatter).toMatch(/^---\n/);
+        expect(frontmatter).toContain('\ndescription: ');
+        expect(frontmatter).toMatch(/\n---\n/);
+        expect(frontmatter).not.toMatch(/\n\s+description:/);
+        expect(frontmatter).not.toMatch(/\n\s+---\n/);
+
+        // Update behavior should rewrite the full file, including frontmatter fences.
+        // This catches regressions where only the managed block is updated.
+        const updated = (configurator as any).buildFullFileContent(id, 'body', '.spool');
+        expect(updated).toMatch(/^---\n/);
+        expect(updated).toContain('\ndescription: ');
+        expect(updated).toMatch(/\n---\n/);
+        expect(updated).not.toMatch(/\n\s+description:/);
+        expect(updated).not.toMatch(/\n\s+---\n/);
+        expect(updated).toContain('<!-- SPOOL:START -->');
+        expect(updated).toContain('<!-- SPOOL:END -->');
+      }
+    });
   });
 });
